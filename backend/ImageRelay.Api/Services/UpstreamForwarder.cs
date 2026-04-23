@@ -54,27 +54,30 @@ public class UpstreamForwarder(
                 return;
             }
 
-            using (var doc = TryParse(rawBody, out var parseErr))
+            var parseResult = ProxyRequestBodyHelper.ParseAndExtractModel(rawBody);
+            if (!parseResult.IsSuccess)
             {
-                if (doc is null)
+                log.BusinessStatus = RequestBusinessStatus.ClientError;
+                switch (parseResult.ErrorType)
                 {
-                    log.BusinessStatus = RequestBusinessStatus.ClientError;
-                    log.ErrorType = "InvalidJson";
-                    log.ErrorMessage = parseErr;
-                    await WriteJsonError(ctx, 400, "invalid JSON body");
-                    return;
+                    case ProxyRequestBodyErrorType.InvalidJson:
+                        log.ErrorType = "InvalidJson";
+                        log.ErrorMessage = parseResult.ErrorMessage;
+                        await WriteJsonError(ctx, 400, "invalid JSON body");
+                        return;
+                    case ProxyRequestBodyErrorType.MissingModel:
+                        log.ErrorType = "MissingModel";
+                        await WriteJsonError(ctx, 400, "missing model field");
+                        return;
+                    default:
+                        log.ErrorType = "InvalidBody";
+                        await WriteJsonError(ctx, 400, "invalid request body");
+                        return;
                 }
-
-                if (!doc.RootElement.TryGetProperty("model", out var modelEl) || modelEl.ValueKind != JsonValueKind.String)
-                {
-                    log.BusinessStatus = RequestBusinessStatus.ClientError;
-                    log.ErrorType = "MissingModel";
-                    await WriteJsonError(ctx, 400, "missing model field");
-                    return;
-                }
-                externalModel = modelEl.GetString();
-                log.ExternalModel = externalModel;
             }
+
+            externalModel = parseResult.Model;
+            log.ExternalModel = externalModel;
 
             var mapping = await db.ModelMappings.AsNoTracking()
                 .FirstOrDefaultAsync(m => m.ExternalName == externalModel && m.IsEnabled, ct);
@@ -88,7 +91,7 @@ public class UpstreamForwarder(
             upstreamModel = mapping.UpstreamName;
             log.UpstreamModel = upstreamModel;
 
-            rewrittenBody = RewriteModel(rawBody, upstreamModel);
+            rewrittenBody = ProxyRequestBodyHelper.RewriteModel(rawBody, upstreamModel);
             headerSettings = await db.UpstreamHeaderSettings.AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == UpstreamHeaderSettings.SingletonId, ct)
                 ?? UpstreamHeaderSettings.CreateDefault();
@@ -261,12 +264,6 @@ public class UpstreamForwarder(
         }
     }
 
-    private static JsonDocument? TryParse(string raw, out string? error)
-    {
-        try { error = null; return JsonDocument.Parse(raw); }
-        catch (JsonException ex) { error = ex.Message; return null; }
-    }
-
     private HttpRequestMessage BuildUpstreamRequest(
         UpstreamAccount account,
         UpstreamHeaderSettings headerSettings,
@@ -315,29 +312,6 @@ public class UpstreamForwarder(
             }
         }
         return count;
-    }
-
-    private static string RewriteModel(string body, string upstreamModel)
-    {
-        using var doc = JsonDocument.Parse(body);
-        using var ms = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(ms))
-        {
-            writer.WriteStartObject();
-            foreach (var prop in doc.RootElement.EnumerateObject())
-            {
-                if (prop.NameEquals("model"))
-                {
-                    writer.WriteString("model", upstreamModel);
-                }
-                else
-                {
-                    prop.WriteTo(writer);
-                }
-            }
-            writer.WriteEndObject();
-        }
-        return Encoding.UTF8.GetString(ms.ToArray());
     }
 
     private static async Task WriteJsonError(HttpContext ctx, int status, string message)
