@@ -1,0 +1,87 @@
+:root {
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #070A13;
+  color: #E6ECF5;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue",
+               Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(0, 212, 255, 0.10), transparent 42%),
+    radial-gradient(circle at 92% 12%, rgba(123, 97, 255, 0.10), transparent 40%),
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  background-attachment: fixed;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.18);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.32);
+}
+
+.tech-title {
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #00D4FF;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.tech-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.6), transparent);
+  margin: 12px 0;
+}
+
+.glow-box {
+  position: relative;
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.04), rgba(123, 97, 255, 0.04));
+  border-radius: 10px;
+}
+
+.glow-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.5), rgba(123, 97, 255, 0.5));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+.num-kpi {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 32px;
+  font-weight: 600;
+  color: #00D4FF;
+  text-shadow: 0 0 18px rgba(0, 212, 255, 0.28);
+}
+
+.status-tag-healthy { color: #22D3A1; border-color: rgba(34, 211, 161, 0.4); background: rgba(34, 211, 161, 0.08); }
+.status-tag-cooling { color: #FFB13C; border-color: rgba(255, 177, 60, 0.4); background: rgba(255, 177, 60, 0.08); }
+.status-tag-banned  { color: #FF4F6D; border-color: rgba(255, 79, 109, 0.4); background: rgba(255, 79, 109, 0.08); }
+.status-tag-invalid { color: #8A9ABF; border-color: rgba(138, 154, 191, 0.4); background: rgba(138, 154, 191, 0.08); }

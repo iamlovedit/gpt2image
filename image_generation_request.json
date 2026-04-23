@@ -1,0 +1,22 @@
+{
+    "url": "https: //chatgpt.com/backend-api/codex/responses",
+    "body": {
+        "model": "gpt-5.4",
+        "input": [
+            {
+                "role": "user",
+                "content": "制作一个招聘海报，界面需要诙谐幽默，尺寸1920*1080，一下是招聘内容 C#工程师（算法开发）岗位职责1.根据业务需求及设计资料，开发与几何计算相关的业务算法。2.配合前端团队，设计并实现高效、稳定的后台 API 接口。3.负责业务数据的存储、查询与优化，熟练操作 MySQL 与 MongoDB 数据库。4.参与系统模块的设计与代码编写，确保算法性能和数据准确性。任职资格：1.精通 C#，熟悉 .NET 开发框架2.具备扎实的几何计算数学基础3.熟悉 API 设计，具备接口性能优化经验4.熟练使用 MySQL和Mongo，掌握索引优化、事务处理及复杂查询5.熟悉 Git 代码管理6.具备良好的文档编写习惯，能与团队高效协作有兴趣得伙伴需要有cad二次开发、revit二次开发相关工作经验的哦，公司地址：上海市普陀区真华南路363弄40号11楼 联系人：图图 13816845541（微信同号）"
+            }
+        ],
+        "tools": [
+            {
+                "type": "image_generation",
+                "output_format": "png"
+            }
+        ],
+        "instructions": "you are a helpful assistant",
+        "tool_choice": "auto",
+        "stream": true,
+        "store": false
+    }
+}
