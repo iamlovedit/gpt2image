@@ -8,6 +8,7 @@ import LogsPage from "./pages/LogsPage";
 import ModelMappingPage from "./pages/ModelMappingPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
+import DocsPage from "./pages/DocsPage";
 import { useAuthStore } from "./stores/authStore";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -22,9 +23,15 @@ function RequireGuest({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function RouteFallback() {
+  const token = useAuthStore((s) => s.token);
+  return <Navigate to={token ? "/dashboard" : "/"} replace />;
+}
+
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<DocsPage />} />
       <Route
         path="/login"
         element={
@@ -34,14 +41,12 @@ export default function App() {
         }
       />
       <Route
-        path="/"
         element={
           <RequireAuth>
             <AdminLayout />
           </RequireAuth>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="keys" element={<KeysPage />} />
@@ -50,7 +55,7 @@ export default function App() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="profile" element={<ProfilePage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<RouteFallback />} />
     </Routes>
   );
 }

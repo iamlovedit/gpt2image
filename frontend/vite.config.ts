@@ -1,9 +1,17 @@
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+
+const frontendRoot = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(frontendRoot, '..');
 
 export default defineConfig({
   plugins: [react()],
   server: {
+    fs: {
+      allow: [repoRoot],
+    },
     port: 5173,
     proxy: {
       '/api': {
