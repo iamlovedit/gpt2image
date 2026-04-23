@@ -12,6 +12,7 @@ using ImageRelay.Api.Features.UpstreamAccounts;
 using ImageRelay.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
@@ -89,21 +90,6 @@ builder.Services.AddScoped<DbSeeder>();
 // ---------- Hosted ----------
 builder.Services.AddHostedService<CooldownRecoveryService>();
 
-// ---------- CORS ----------
-var adminOrigins = builder.Configuration.GetSection("Cors:AdminOrigins").Get<string[]>() ?? [];
-builder.Services.AddCors(o =>
-{
-    o.AddPolicy("admin", p => p
-        .WithOrigins(adminOrigins)
-        .AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials());
-    o.AddPolicy("public", p => p
-        .AllowAnyOrigin()
-        .AllowAnyHeader()
-        .AllowAnyMethod());
-});
-
 // ---------- Swagger (Dev only) ----------
 if (builder.Environment.IsDevelopment())
 {
@@ -118,6 +104,10 @@ builder.WebHost.ConfigureKestrel(o =>
 });
 
 var app = builder.Build();
+var spaRoot = ResolveSpaRoot(app.Environment);
+var spaAssetsAvailable = Directory.Exists(spaRoot);
+var spaIndexPath = Path.Combine(spaRoot, "index.html");
+var spaFiles = spaAssetsAvailable ? new PhysicalFileProvider(spaRoot) : null;
 
 // ---------- Migrate + seed ----------
 using (var scope = app.Services.CreateScope())
@@ -129,33 +119,75 @@ using (var scope = app.Services.CreateScope())
 // ---------- Pipeline ----------
 app.UseSerilogRequestLogging();
 
-app.UseCors();
-app.UseAuthentication();
-app.UseAuthorization();
-
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-// Apply admin CORS to /api/** via endpoint metadata
-var apiCors = app.MapGroup("").RequireCors("admin");
-apiCors.MapAuth();
-apiCors.MapUpstreamAccounts();
-apiCors.MapClientKeys();
-apiCors.MapModelMappings();
-apiCors.MapLogs();
-apiCors.MapDashboard();
-apiCors.MapSettings();
+if (spaFiles is not null)
+{
+    app.UseDefaultFiles(new DefaultFilesOptions
+    {
+        FileProvider = spaFiles
+    });
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = spaFiles
+    });
+}
 
-// Proxy route under /v1 — permissive CORS so any client can call.
-var publicGroup = app.MapGroup("").RequireCors("public");
-publicGroup.MapProxy();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapAuth();
+app.MapUpstreamAccounts();
+app.MapClientKeys();
+app.MapModelMappings();
+app.MapLogs();
+app.MapDashboard();
+app.MapSettings();
+app.MapProxy();
 
 app.MapGet("/healthz", () => Results.Ok(new { ok = true, ts = DateTime.UtcNow }));
+app.MapFallback(async context =>
+{
+    if (!HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    if (IsReservedPath(context.Request.Path) || !File.Exists(spaIndexPath))
+    {
+        context.Response.StatusCode = StatusCodes.Status404NotFound;
+        return;
+    }
+
+    context.Response.ContentType = "text/html; charset=utf-8";
+    await context.Response.SendFileAsync(spaIndexPath);
+});
 
 app.Run();
+
+static string ResolveSpaRoot(IWebHostEnvironment env)
+{
+    var repoDist = Path.GetFullPath(Path.Combine(env.ContentRootPath, "..", "..", "frontend", "dist"));
+    if (Directory.Exists(repoDist))
+    {
+        return repoDist;
+    }
+
+    return env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot");
+}
+
+static bool IsReservedPath(PathString path)
+{
+    return path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWithSegments("/v1", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWithSegments("/healthz", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase);
+}
 
 static void ApplyEnvironmentOverrides(IConfiguration cfg)
 {

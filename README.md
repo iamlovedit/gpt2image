@@ -11,6 +11,7 @@
 
 ```
 agents-fdd777ad09/
+├── Dockerfile                  单容器生产构建
 ├── business.md                 需求文档
 ├── image_*                     上游协议样本
 ├── backend/
@@ -27,8 +28,15 @@ agents-fdd777ad09/
 | pnpm | ≥ 9 |
 | PostgreSQL | ≥ 14 |
 | Seq (可选) | 日志聚合，不配置则跳过 |
+| Docker (可选) | 用于单容器生产构建 / 本地联调 |
 
 ## 首次启动
+
+默认采用“生产同源、开发代理”的模型：
+
+- 生产环境：前端打包产物由 ASP.NET Core 直接托管，浏览器访问后台页面以及调用 `/api`、`/v1` 都走同一 origin。
+- 开发环境：前端继续跑 `Vite`，通过 dev server proxy 把 `/api` 和 `/v1` 转发到本地后端。
+- 后端不再配置 CORS；浏览器跨域直连 `/v1/responses` 不再是支持场景。
 
 ### 1. 准备数据库
 
@@ -77,6 +85,26 @@ pnpm dev
 ```
 
 访问 `http://localhost:5173`，用 bootstrap 账号登录。
+Vite 会将 `/api` 和 `/v1` 代理到 `http://localhost:5000`，本地开发不需要再配置后端允许来源。
+
+### 4. 生产单容器运行
+
+```bash
+docker build -t image-relay .
+
+docker run --rm -p 5000:5000 \
+  -e DATABASE_URL='Host=host.docker.internal;Port=5432;Database=image_relay;Username=postgres;Password=postgres' \
+  -e JWT_SECRET='please-replace-with-32-byte-random-string' \
+  -e BOOTSTRAP_ADMIN_USERNAME='admin' \
+  -e BOOTSTRAP_ADMIN_PASSWORD='admin123!' \
+  image-relay
+```
+
+启动后可直接访问 `http://localhost:5000`：
+
+- `/` 返回管理后台页面
+- `/api/*` 提供后台 API
+- `/v1/responses` 继续提供 OpenAI 兼容代理接口
 
 ---
 
@@ -96,7 +124,11 @@ pnpm dev
 | `PROXY_COOLING_MINUTES` | 429 冷却分钟数 | `5` |
 | `PROXY_ACCOUNT_CONCURRENCY` | 单账号默认并发上限 | `2` |
 
-前端只有一个可选变量 `VITE_API_BASE`（默认 `/api`，通过 Vite dev server 代理到后端）。
+前端只有一个可选变量 `VITE_API_BASE`：
+
+- 默认值为 `/api`
+- 开发环境通过 Vite dev server 代理到后端
+- 生产环境应保持同源访问，不建议配置为跨域地址
 
 ---
 
@@ -119,7 +151,7 @@ pnpm dev
      -H "Content-Type: application/json" \
      -d @image_generation_request.json
    ```
-   期待看到与 `image_generation_response` 同形态的 SSE 事件流。
+   期待看到与 `image_generation_response` 同形态的 SSE 事件流。该接口面向服务端客户端或同源页面调用；若是其他浏览器 origin，需自行通过网关或后端代理转发。
 
 4. 回到「请求日志」→ 刚刚那条记录应该出现；状态为「成功」，SSE 事件数 > 0。
 
@@ -138,6 +170,7 @@ pnpm dev
 
 ✅ 已实现
 - 管理员 JWT 登录 / 改密
+- 管理后台静态资源同源托管（ASP.NET Core 直接提供前端构建产物）
 - 上游账号：列表 / 筛选 / 批量导入 / 编辑 / 禁用启用 / 手动刷新 / 删除
 - 调用方 API Key：列表 / 创建（明文一次性展示）/ 编辑 / 禁用启用 / 删除
 - SSE 转发（`POST /v1/responses`）：零缓冲透传、LRU 调度、per-account 并发、token 主动/被动刷新、状态机（cooling/banned/invalid）、换账号重试
@@ -147,6 +180,7 @@ pnpm dev
 - 调用方限流：per-Key RPM + 并发
 - 冷却恢复后台服务（每 30s 扫描）
 - Serilog → Console + Seq（可选）
+- 单 Docker 镜像构建前后端并同源交付
 
 🔜 后续迭代（MVP 范围外）
 - Dashboard 趋势图
@@ -155,10 +189,11 @@ pnpm dev
 - 图片产物落对象存储
 - 单元 / 集成测试
 - Redis / 多实例扩展
-- Docker / CI
+- CI
 
 ## 安全注意
 
 - 生产环境**必须**用强随机 `JWT_SECRET`、修改默认 bootstrap 密码。
 - API Key 库内存 SHA-256 不存明文；access_token / refresh_token 建议在应用层加密（目前明文存储，MVP 简化）。
 - 敏感字段 access_token / refresh_token / 请求体 / base64 图片**不写日志**。
+- 当前设计默认不向浏览器跨 origin 暴露 CORS；若未来要开放第三方网页直连 `/v1/*`，需要单独恢复并审查该策略。
