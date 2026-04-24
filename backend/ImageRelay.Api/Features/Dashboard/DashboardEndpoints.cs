@@ -65,5 +65,41 @@ public static class DashboardEndpoints
                 recent
             });
         });
+
+        g.MapGet("/request-stats", async (string? range, AppDbContext db) =>
+        {
+            var statsRange = RequestStatsService.CreateRange(range, DateTime.UtcNow);
+            if (statsRange is null)
+            {
+                return Results.BadRequest(new { error = "range must be one of: today, 7d, 30d" });
+            }
+
+            var logs = await db.RequestLogs.AsNoTracking()
+                .Where(l => l.StartedAt >= statsRange.StartUtc && l.StartedAt <= statsRange.EndUtc)
+                .ToListAsync();
+
+            var accountIds = logs
+                .Select(l => l.UpstreamAccountId)
+                .OfType<Guid>()
+                .Distinct()
+                .ToList();
+
+            var accountNames = await db.UpstreamAccounts.AsNoTracking()
+                .Where(a => accountIds.Contains(a.Id))
+                .Select(a => new { a.Id, Name = a.Name ?? a.Email ?? a.ChatGptAccountId })
+                .ToDictionaryAsync(a => a.Id, a => a.Name ?? string.Empty);
+
+            var clientKeyIds = logs
+                .Select(l => l.ClientKeyId)
+                .OfType<Guid>()
+                .Distinct()
+                .ToList();
+
+            var clientKeyNames = await db.ClientApiKeys.AsNoTracking()
+                .Where(k => clientKeyIds.Contains(k.Id))
+                .ToDictionaryAsync(k => k.Id, k => k.Name);
+
+            return Results.Ok(RequestStatsService.Build(statsRange, logs, accountNames, clientKeyNames));
+        });
     }
 }

@@ -131,6 +131,13 @@ export default function LogsPage() {
               </span>
             ),
           },
+          {
+            title: "API Key",
+            dataIndex: "clientKeyName",
+            width: 160,
+            ellipsis: true,
+            render: (_: string | null, row) => row.clientKeyName || row.clientKeyId || "—",
+          },
           { title: "模型", dataIndex: "externalModel", width: 120 },
           { title: "上游模型", dataIndex: "upstreamModel", width: 120 },
           {
@@ -187,6 +194,9 @@ export default function LogsPage() {
             </Descriptions.Item>
             <Descriptions.Item label="Client Key Id">
               <span className="mono">{detail.clientKeyId ?? "—"}</span>
+            </Descriptions.Item>
+            <Descriptions.Item label="Client Key 名称">
+              {detail.clientKeyName ?? "—"}
             </Descriptions.Item>
             <Descriptions.Item label="Account Id">
               <span className="mono">{detail.upstreamAccountId ?? "—"}</span>

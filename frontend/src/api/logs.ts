@@ -25,6 +25,7 @@ export interface RequestLog {
   id: string;
   requestId: string;
   clientKeyId: string | null;
+  clientKeyName: string | null;
   upstreamAccountId: string | null;
   externalModel: string | null;
   upstreamModel: string | null;

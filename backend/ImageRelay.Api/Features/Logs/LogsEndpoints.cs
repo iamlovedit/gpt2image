@@ -37,13 +37,39 @@ public static class LogsEndpoints
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-            return Results.Ok(new { total, page, pageSize, items = rows });
+
+            var clientKeyIds = rows
+                .Select(l => l.ClientKeyId)
+                .OfType<Guid>()
+                .Distinct()
+                .ToList();
+            var clientKeyNames = await db.ClientApiKeys.AsNoTracking()
+                .Where(k => clientKeyIds.Contains(k.Id))
+                .ToDictionaryAsync(k => k.Id, k => k.Name);
+            var items = rows
+                .Select(l => RequestLogDto.From(
+                    l,
+                    l.ClientKeyId.HasValue && clientKeyNames.TryGetValue(l.ClientKeyId.Value, out var name) ? name : null))
+                .ToList();
+
+            return Results.Ok(new { total, page, pageSize, items });
         });
 
         g.MapGet("/{id:guid}", async (Guid id, AppDbContext db) =>
         {
             var log = await db.RequestLogs.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
-            return log is null ? Results.NotFound() : Results.Ok(log);
+            if (log is null) return Results.NotFound();
+
+            string? clientKeyName = null;
+            if (log.ClientKeyId.HasValue)
+            {
+                clientKeyName = await db.ClientApiKeys.AsNoTracking()
+                    .Where(k => k.Id == log.ClientKeyId.Value)
+                    .Select(k => k.Name)
+                    .FirstOrDefaultAsync();
+            }
+
+            return Results.Ok(RequestLogDto.From(log, clientKeyName));
         });
     }
 }
