@@ -16,6 +16,10 @@ function StatCard({ label, value, hint }: { label: string; value: React.ReactNod
   );
 }
 
+function formatToken(value: number | null | undefined) {
+  return value == null ? '—' : value.toLocaleString();
+}
+
 export default function DashboardPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-summary'],
@@ -25,6 +29,7 @@ export default function DashboardPage() {
 
   const rate = data?.successRate == null ? '—' : `${(data.successRate * 100).toFixed(1)}%`;
   const avg = data?.avgDurationMs ? `${Math.round(data.avgDurationMs)}ms` : '—';
+  const totalTokens = formatToken(data?.totalTokens24h);
 
   return (
     <Space direction="vertical" size={20} style={{ width: '100%' }}>
@@ -43,11 +48,7 @@ export default function DashboardPage() {
           />
         </Col>
         <Col xs={24} sm={12} md={6}>
-          <StatCard
-            label="启用 API Key"
-            value={`${data?.keysActive ?? 0}/${data?.keysTotal ?? 0}`}
-            hint="active / total"
-          />
+          <StatCard label="24h Token" value={totalTokens} hint={`图片 ${formatToken(data?.imageTotalTokens24h)}`} />
         </Col>
       </Row>
 
@@ -85,6 +86,12 @@ export default function DashboardPage() {
               dataIndex: 'durationMs',
               width: 90,
               render: (v: number | null) => (v == null ? '—' : <span className="mono">{v}ms</span>),
+            },
+            {
+              title: 'Token',
+              dataIndex: 'totalTokens',
+              width: 100,
+              render: (v: number | null) => <span className="mono">{formatToken(v)}</span>,
             },
             { title: 'HTTP', dataIndex: 'httpStatus', width: 80, render: (v) => v ?? '—' },
             { title: '重试', dataIndex: 'retryCount', width: 60 },

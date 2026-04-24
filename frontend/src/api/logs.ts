@@ -37,6 +37,12 @@ export interface RequestLog {
   errorMessage: string | null;
   sseEventCount: number;
   retryCount: number;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  imageInputTokens: number | null;
+  imageOutputTokens: number | null;
+  imageTotalTokens: number | null;
 }
 
 export async function listLogs(params: {

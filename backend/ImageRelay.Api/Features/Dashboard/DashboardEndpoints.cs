@@ -19,6 +19,18 @@ public static class DashboardEndpoints
             var avgDurationMs = await db.RequestLogs
                 .Where(l => l.StartedAt >= since && l.DurationMs != null)
                 .AverageAsync(l => (double?)l.DurationMs) ?? 0;
+            var inputTokens24h = await db.RequestLogs
+                .Where(l => l.StartedAt >= since)
+                .SumAsync(l => l.InputTokens ?? 0);
+            var outputTokens24h = await db.RequestLogs
+                .Where(l => l.StartedAt >= since)
+                .SumAsync(l => l.OutputTokens ?? 0);
+            var totalTokens24h = await db.RequestLogs
+                .Where(l => l.StartedAt >= since)
+                .SumAsync(l => l.TotalTokens ?? 0);
+            var imageTotalTokens24h = await db.RequestLogs
+                .Where(l => l.StartedAt >= since)
+                .SumAsync(l => l.ImageTotalTokens ?? 0);
 
             var accountTotal = await db.UpstreamAccounts.CountAsync();
             var accountHealthy = await db.UpstreamAccounts.CountAsync(a => a.Status == UpstreamAccountStatus.Healthy);
@@ -41,6 +53,10 @@ public static class DashboardEndpoints
                 success24h,
                 successRate = total24h == 0 ? (double?)null : (double)success24h / total24h,
                 avgDurationMs,
+                inputTokens24h,
+                outputTokens24h,
+                totalTokens24h,
+                imageTotalTokens24h,
                 accountTotal,
                 accountHealthy,
                 accountByStatus,

@@ -225,11 +225,13 @@ public class UpstreamForwarder(
                 await using (var upstreamStream = await resp.Content.ReadAsStreamAsync(ct))
                 {
                     var buffer = new byte[16 * 1024];
+                    var usageParser = new ResponseTokenUsageParser();
                     int read;
                     while ((read = await upstreamStream.ReadAsync(buffer, ct)) > 0)
                     {
                         await ctx.Response.Body.WriteAsync(buffer.AsMemory(0, read), ct);
                         await ctx.Response.Body.FlushAsync(ct);
+                        usageParser.Append(buffer.AsSpan(0, read), log);
                         eventCount += CountEvents(buffer.AsSpan(0, read));
                     }
                 }

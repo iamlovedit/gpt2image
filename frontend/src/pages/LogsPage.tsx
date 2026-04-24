@@ -11,6 +11,10 @@ const statusOptions = Object.entries(BusinessStatusLabel).map(([v, label]) => ({
   label,
 }));
 
+function formatToken(value: number | null | undefined) {
+  return value == null ? '—' : value.toLocaleString();
+}
+
 export default function LogsPage() {
   const [status, setStatus] = useState<RequestBusinessStatus | undefined>();
   const [clientKeyId, setClientKeyId] = useState('');
@@ -97,6 +101,7 @@ export default function LogsPage() {
           },
           { title: 'HTTP', dataIndex: 'httpStatus', width: 80, render: (v) => v ?? '—' },
           { title: '耗时', dataIndex: 'durationMs', width: 90, render: (v) => v == null ? '—' : <span className="mono">{v}ms</span> },
+          { title: 'Token', dataIndex: 'totalTokens', width: 100, render: (v) => <span className="mono">{formatToken(v)}</span> },
           { title: '重试', dataIndex: 'retryCount', width: 60 },
           { title: '事件数', dataIndex: 'sseEventCount', width: 80 },
           { title: '错误', dataIndex: 'errorMessage', ellipsis: true, render: (v) => v || '—' },
@@ -121,6 +126,12 @@ export default function LogsPage() {
             <Descriptions.Item label="耗时">{detail.durationMs == null ? '—' : `${detail.durationMs}ms`}</Descriptions.Item>
             <Descriptions.Item label="HTTP 状态">{detail.httpStatus ?? '—'}</Descriptions.Item>
             <Descriptions.Item label="业务状态">{BusinessStatusLabel[detail.businessStatus]}</Descriptions.Item>
+            <Descriptions.Item label="Token 总计"><span className="mono">{formatToken(detail.totalTokens)}</span></Descriptions.Item>
+            <Descriptions.Item label="输入 Token"><span className="mono">{formatToken(detail.inputTokens)}</span></Descriptions.Item>
+            <Descriptions.Item label="输出 Token"><span className="mono">{formatToken(detail.outputTokens)}</span></Descriptions.Item>
+            <Descriptions.Item label="图片 Token 总计"><span className="mono">{formatToken(detail.imageTotalTokens)}</span></Descriptions.Item>
+            <Descriptions.Item label="图片输入 Token"><span className="mono">{formatToken(detail.imageInputTokens)}</span></Descriptions.Item>
+            <Descriptions.Item label="图片输出 Token"><span className="mono">{formatToken(detail.imageOutputTokens)}</span></Descriptions.Item>
             <Descriptions.Item label="重试次数">{detail.retryCount}</Descriptions.Item>
             <Descriptions.Item label="SSE 事件数">{detail.sseEventCount}</Descriptions.Item>
             <Descriptions.Item label="错误类型">{detail.errorType ?? '—'}</Descriptions.Item>

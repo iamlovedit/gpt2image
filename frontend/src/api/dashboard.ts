@@ -7,6 +7,10 @@ export interface DashboardSummary {
   success24h: number;
   successRate: number | null;
   avgDurationMs: number;
+  inputTokens24h: number;
+  outputTokens24h: number;
+  totalTokens24h: number;
+  imageTotalTokens24h: number;
   accountTotal: number;
   accountHealthy: number;
   accountByStatus: Array<{ status: UpstreamAccountStatus; count: number }>;

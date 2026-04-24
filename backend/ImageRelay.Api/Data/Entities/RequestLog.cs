@@ -28,4 +28,10 @@ public class RequestLog
     public string? ErrorMessage { get; set; }
     public int SseEventCount { get; set; }
     public int RetryCount { get; set; }
+    public long? InputTokens { get; set; }
+    public long? OutputTokens { get; set; }
+    public long? TotalTokens { get; set; }
+    public long? ImageInputTokens { get; set; }
+    public long? ImageOutputTokens { get; set; }
+    public long? ImageTotalTokens { get; set; }
 }

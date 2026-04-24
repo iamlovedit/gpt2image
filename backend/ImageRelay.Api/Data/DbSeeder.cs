@@ -105,5 +105,17 @@ public class DbSeeder(
             );
             """,
             ct);
+
+        await db.Database.ExecuteSqlRawAsync(
+            """
+            ALTER TABLE request_logs
+            ADD COLUMN IF NOT EXISTS "InputTokens" bigint,
+            ADD COLUMN IF NOT EXISTS "OutputTokens" bigint,
+            ADD COLUMN IF NOT EXISTS "TotalTokens" bigint,
+            ADD COLUMN IF NOT EXISTS "ImageInputTokens" bigint,
+            ADD COLUMN IF NOT EXISTS "ImageOutputTokens" bigint,
+            ADD COLUMN IF NOT EXISTS "ImageTotalTokens" bigint;
+            """,
+            ct);
     }
 }
