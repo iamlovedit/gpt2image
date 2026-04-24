@@ -1,11 +1,11 @@
 import { Card, Col, Row, Table, Tag, Space } from "antd";
 import { useQuery } from "@tanstack/react-query";
-import { getSummary } from "../api/dashboard";
+import { getSummary } from "@/api/dashboard";
 import {
   BusinessStatusLabel,
   RequestBusinessStatus,
   type RequestLog,
-} from "../api/logs";
+} from "@/api/logs";
 import dayjs from "dayjs";
 
 function StatCard({
@@ -96,7 +96,7 @@ export default function DashboardPage() {
 
       <Card
         className="glow-box"
-        bordered={false}
+        variant="borderless"
         title={
           <span className="tech-title" style={{ fontSize: 13 }}>
             RECENT · REQUESTS

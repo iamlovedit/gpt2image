@@ -36,8 +36,8 @@ import {
   refreshAccount,
   testAccount,
   updateAccount,
-} from "../api/accounts";
-import { extractError } from "../api/client";
+} from "@/api/accounts";
+import { extractError } from "@/api/client";
 
 const statusOptions = [
   {

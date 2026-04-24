@@ -22,8 +22,8 @@ import {
   listModels,
   type ModelMapping,
   updateModel,
-} from "../api/models";
-import { extractError } from "../api/client";
+} from "@/api/models";
+import { extractError } from "@/api/client";
 
 export default function ModelMappingPage() {
   const qc = useQueryClient();

@@ -17,7 +17,7 @@ import {
   RequestBusinessStatus,
   RequestLog,
   listLogs,
-} from "../api/logs";
+} from "@/api/logs";
 
 const statusOptions = Object.entries(BusinessStatusLabel).map(([v, label]) => ({
   value: Number(v) as RequestBusinessStatus,

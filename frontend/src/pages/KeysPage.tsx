@@ -30,8 +30,8 @@ import {
   deleteKey,
   listKeys,
   updateKey,
-} from "../api/keys";
-import { extractError } from "../api/client";
+} from "@/api/keys";
+import { extractError } from "@/api/client";
 
 export default function KeysPage() {
   const qc = useQueryClient();

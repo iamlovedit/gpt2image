@@ -8,6 +8,11 @@ const repoRoot = resolve(frontendRoot, '..');
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': resolve(frontendRoot, 'src'),
+    },
+  },
   server: {
     fs: {
       allow: [repoRoot],

@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Card, Form, Input, Button, App } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { useAuthStore } from "../stores/authStore";
-import { login } from "../api/auth";
-import { extractError } from "../api/client";
+import { useAuthStore } from "@/stores/authStore";
+import { login } from "@/api/auth";
+import { extractError } from "@/api/client";
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
