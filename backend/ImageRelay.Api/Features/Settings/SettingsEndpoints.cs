@@ -1,8 +1,3 @@
-using ImageRelay.Api.Data;
-using ImageRelay.Api.Data.Entities;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
 namespace ImageRelay.Api.Features.Settings;
 
 public record UpstreamHeaderSettingsDto(

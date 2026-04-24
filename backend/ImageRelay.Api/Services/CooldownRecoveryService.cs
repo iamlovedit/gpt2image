@@ -1,7 +1,3 @@
-using ImageRelay.Api.Data;
-using ImageRelay.Api.Data.Entities;
-using Microsoft.EntityFrameworkCore;
-
 namespace ImageRelay.Api.Services;
 
 public class CooldownRecoveryService(IServiceScopeFactory scopeFactory, ILogger<CooldownRecoveryService> logger)

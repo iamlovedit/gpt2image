@@ -1,9 +1,3 @@
-using ImageRelay.Api.Configuration;
-using ImageRelay.Api.Data.Entities;
-using ImageRelay.Api.Services;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-
 namespace ImageRelay.Api.Data;
 
 public class DbSeeder(

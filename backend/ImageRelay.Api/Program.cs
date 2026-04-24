@@ -1,6 +1,3 @@
-using System.Text;
-using ImageRelay.Api.Configuration;
-using ImageRelay.Api.Data;
 using ImageRelay.Api.Features.Auth;
 using ImageRelay.Api.Features.ClientKeys;
 using ImageRelay.Api.Features.Dashboard;
@@ -9,9 +6,7 @@ using ImageRelay.Api.Features.ModelMappings;
 using ImageRelay.Api.Features.Proxy;
 using ImageRelay.Api.Features.Settings;
 using ImageRelay.Api.Features.UpstreamAccounts;
-using ImageRelay.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;

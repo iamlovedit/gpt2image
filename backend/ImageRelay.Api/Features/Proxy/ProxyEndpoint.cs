@@ -1,8 +1,4 @@
-using ImageRelay.Api.Data;
-using ImageRelay.Api.Data.Entities;
 using ImageRelay.Api.Middleware;
-using ImageRelay.Api.Services;
-using System.Text.Json;
 
 namespace ImageRelay.Api.Features.Proxy;
 

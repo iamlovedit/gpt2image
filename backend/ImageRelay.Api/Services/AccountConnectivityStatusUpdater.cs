@@ -1,7 +1,3 @@
-using ImageRelay.Api.Data.Entities;
-using Microsoft.Extensions.Options;
-using ImageRelay.Api.Configuration;
-
 namespace ImageRelay.Api.Services;
 
 public class AccountConnectivityStatusUpdater(IOptions<ProxyOptions> proxy)

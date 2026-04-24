@@ -1,8 +1,4 @@
 using System.Security.Claims;
-using ImageRelay.Api.Data;
-using ImageRelay.Api.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace ImageRelay.Api.Features.Auth;
 

@@ -1,6 +1,3 @@
-using System.Text;
-using System.Text.Json;
-
 namespace ImageRelay.Api.Services;
 
 internal enum ProxyRequestBodyErrorType

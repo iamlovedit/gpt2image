@@ -1,7 +1,3 @@
-using ImageRelay.Api.Data;
-using ImageRelay.Api.Data.Entities;
-using Microsoft.EntityFrameworkCore;
-
 namespace ImageRelay.Api.Features.Dashboard;
 
 public static class DashboardEndpoints

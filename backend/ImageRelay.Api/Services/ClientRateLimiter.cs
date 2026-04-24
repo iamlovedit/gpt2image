@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using ImageRelay.Api.Data.Entities;
 
 namespace ImageRelay.Api.Services;
 

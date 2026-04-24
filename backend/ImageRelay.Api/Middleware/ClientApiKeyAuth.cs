@@ -1,8 +1,3 @@
-using ImageRelay.Api.Data;
-using ImageRelay.Api.Data.Entities;
-using ImageRelay.Api.Services;
-using Microsoft.EntityFrameworkCore;
-
 namespace ImageRelay.Api.Middleware;
 
 public static class ClientApiKeyAuth

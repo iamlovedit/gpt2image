@@ -1,10 +1,5 @@
 using System.Collections.Concurrent;
-using System.Net.Http.Json;
 using System.Text.Json.Serialization;
-using ImageRelay.Api.Configuration;
-using ImageRelay.Api.Data;
-using ImageRelay.Api.Data.Entities;
-using Microsoft.Extensions.Options;
 
 namespace ImageRelay.Api.Services;
 

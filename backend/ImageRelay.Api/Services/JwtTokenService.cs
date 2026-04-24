@@ -1,9 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
-using ImageRelay.Api.Configuration;
-using ImageRelay.Api.Data.Entities;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ImageRelay.Api.Services;

@@ -1,5 +1,3 @@
-using ImageRelay.Api.Data.Entities;
-
 namespace ImageRelay.Api.Services;
 
 public record AccountConnectivityTestResult(

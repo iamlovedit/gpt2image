@@ -1,5 +1,3 @@
-using ImageRelay.Api.Data.Entities;
-
 namespace ImageRelay.Api.Features.Dashboard;
 
 public static class RequestStatsService
