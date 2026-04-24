@@ -82,6 +82,8 @@ builder.Services.AddSingleton<AccountConcurrencyRegistry>();
 builder.Services.AddSingleton<ClientRateLimiter>();
 builder.Services.AddSingleton<TokenRefresher>();
 builder.Services.AddSingleton<UpstreamForwarder>();
+builder.Services.AddSingleton<AccountConnectivityStatusUpdater>();
+builder.Services.AddSingleton<AccountConnectivityTester>();
 
 // ---------- Scoped ----------
 builder.Services.AddScoped<AccountSelector>();

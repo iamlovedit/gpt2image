@@ -276,7 +276,7 @@ export default function DocsPage() {
       curlCode: buildCurlSnippet(origin, "image_generation_body.json"),
       responseCode: generationResponseSnippet,
       notes: [
-        "对外模型名保持 `gpt-5.4`，由中转站映射到上游 `gpt-image-2`。",
+        "对外模型名保持 `gpt-5.4`，由中转站映射到上游 Codex responses 支持的模型。默认映射为 `gpt-5.4`。",
         "默认返回流式 SSE，生图过程中会出现 `response.image_generation_call.partial_image`。",
         "最终图片仍以 base64 事件透传，不需要额外轮询下载接口。",
       ],
@@ -352,7 +352,7 @@ export default function DocsPage() {
                 <Tag icon={<ThunderboltOutlined />} color="gold">
                   Bearer API Key
                 </Tag>
-                <Tag color="geekblue">Model Map: gpt-5.4 → gpt-image-2</Tag>
+                <Tag color="geekblue">Model Map: gpt-5.4 → gpt-5.4</Tag>
               </Space>
 
               <div className="docs-hero-actions">

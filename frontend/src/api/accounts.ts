@@ -41,6 +41,19 @@ export interface Account {
   failureCount: number;
   concurrencyLimit: number;
   notes: string | null;
+  name: string | null;
+  email: string | null;
+  platform: string | null;
+  accountType: string | null;
+  proxyKey: string | null;
+  priority: number | null;
+  rateMultiplier: number | null;
+  autoPauseOnExpired: boolean | null;
+  chatGptUserId: string | null;
+  clientId: string | null;
+  organizationId: string | null;
+  planType: string | null;
+  subscriptionExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -68,6 +81,23 @@ export interface ImportItem {
   accessToken: string;
   refreshToken: string;
   chatGptAccountId?: string;
+  accessTokenExpiresAt?: string | number;
+  concurrencyLimit?: number;
+  notes?: string;
+  name?: string;
+  email?: string;
+  platform?: string;
+  accountType?: string;
+  proxyKey?: string;
+  priority?: number;
+  rateMultiplier?: number;
+  autoPauseOnExpired?: boolean;
+  chatGptUserId?: string;
+  clientId?: string;
+  organizationId?: string;
+  planType?: string;
+  subscriptionExpiresAt?: string | number;
+  rawMetadataJson?: string;
 }
 
 export async function importAccounts(items: ImportItem[], strategy: ImportStrategy) {
@@ -87,6 +117,19 @@ export async function updateAccount(id: string, patch: {
 
 export async function refreshAccount(id: string): Promise<Account> {
   const { data } = await http.post(`/accounts/${id}/refresh`);
+  return data;
+}
+
+export interface AccountTestResult {
+  ok: boolean;
+  httpStatus: number | null;
+  message: string;
+  durationMs: number;
+  status: UpstreamAccountStatus;
+}
+
+export async function testAccount(id: string): Promise<AccountTestResult> {
+  const { data } = await http.post(`/accounts/${id}/test`);
   return data;
 }
 

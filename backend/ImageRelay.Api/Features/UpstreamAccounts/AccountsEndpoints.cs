@@ -21,12 +21,23 @@ public record AccountDto(
     long FailureCount,
     int ConcurrencyLimit,
     string? Notes,
+    string? Name,
+    string? Email,
+    string? Platform,
+    string? AccountType,
+    string? ProxyKey,
+    int? Priority,
+    decimal? RateMultiplier,
+    bool? AutoPauseOnExpired,
+    string? ChatGptUserId,
+    string? ClientId,
+    string? OrganizationId,
+    string? PlanType,
+    DateTime? SubscriptionExpiresAt,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
 public enum ImportDuplicateStrategy { Skip = 0, Overwrite = 1, Fail = 2 }
-
-public record ImportRequest(List<JsonElement> Items, ImportDuplicateStrategy Strategy);
 
 public record AccountUpdateRequest(
     UpstreamAccountStatus? Status,
@@ -69,49 +80,40 @@ public static class AccountsEndpoints
             return Results.Ok(new { total, page, pageSize, items = rows });
         });
 
-        g.MapPost("/import", async ([FromBody] ImportRequest req, AppDbContext db) =>
+        g.MapPost("/import", async ([FromBody] JsonElement req, AppDbContext db) =>
         {
-            if (req.Items is null || req.Items.Count == 0)
+            var payload = AccountImportParser.NormalizeImportItems(req);
+            if (!payload.IsValidShape || payload.Items.Count == 0)
                 return Results.BadRequest(new { error = "items is empty" });
 
             int inserted = 0, updated = 0, skipped = 0;
-            foreach (var item in req.Items)
+            foreach (var item in payload.Items)
             {
-                var accessToken = ReadString(item, "accessToken", "access_token");
-                var refreshToken = ReadString(item, "refreshToken", "refresh_token");
-                var accountId = ReadOptionalString(item, "chatgptAccountId", "chatgpt_account_id");
-
-                if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(refreshToken))
+                if (string.IsNullOrWhiteSpace(item.AccessToken) || string.IsNullOrWhiteSpace(item.RefreshToken))
                 { skipped++; continue; }
 
+                var refreshToken = item.RefreshToken.Trim();
                 var existing = await db.UpstreamAccounts
                     .FirstOrDefaultAsync(a => a.RefreshToken == refreshToken);
 
                 if (existing is null)
                 {
-                    db.UpstreamAccounts.Add(new UpstreamAccount
-                    {
-                        AccessToken = accessToken,
-                        RefreshToken = refreshToken,
-                        ChatGptAccountId = accountId.Value,
-                        Status = UpstreamAccountStatus.Healthy
-                    });
+                    var account = new UpstreamAccount { Status = UpstreamAccountStatus.Healthy };
+                    ApplyImport(account, item, overwriteMissing: true);
+                    db.UpstreamAccounts.Add(account);
                     inserted++;
                 }
                 else
                 {
-                    switch (req.Strategy)
+                    switch (payload.Strategy)
                     {
                         case ImportDuplicateStrategy.Skip:
                             skipped++;
                             break;
                         case ImportDuplicateStrategy.Overwrite:
-                            existing.AccessToken = accessToken;
-                            existing.RefreshToken = refreshToken;
-                            if (accountId.HasValue) existing.ChatGptAccountId = accountId.Value;
+                            ApplyImport(existing, item, overwriteMissing: false);
                             existing.Status = UpstreamAccountStatus.Healthy;
                             existing.LastError = null;
-                            existing.AccessTokenExpiresAt = null;
                             updated++;
                             break;
                         case ImportDuplicateStrategy.Fail:
@@ -159,6 +161,15 @@ public static class AccountsEndpoints
             }
         });
 
+        g.MapPost("/{id:guid}/test", async (Guid id, AppDbContext db, AccountConnectivityTester tester, CancellationToken ct) =>
+        {
+            var a = await db.UpstreamAccounts.FindAsync([id], ct);
+            if (a is null) return Results.NotFound();
+
+            var result = await tester.TestAsync(db, a, ct);
+            return Results.Ok(result);
+        });
+
         g.MapDelete("/{id:guid}", async (Guid id, AppDbContext db) =>
         {
             var a = await db.UpstreamAccounts.FindAsync(id);
@@ -183,8 +194,51 @@ public static class AccountsEndpoints
         a.FailureCount,
         a.ConcurrencyLimit,
         a.Notes,
+        a.Name,
+        a.Email,
+        a.Platform,
+        a.AccountType,
+        a.ProxyKey,
+        a.Priority,
+        a.RateMultiplier,
+        a.AutoPauseOnExpired,
+        a.ChatGptUserId,
+        a.ClientId,
+        a.OrganizationId,
+        a.PlanType,
+        a.SubscriptionExpiresAt,
         a.CreatedAt,
         a.UpdatedAt);
+
+    private static void ApplyImport(UpstreamAccount account, AccountImportItem item, bool overwriteMissing)
+    {
+        account.AccessToken = item.AccessToken!.Trim();
+        account.RefreshToken = item.RefreshToken!.Trim();
+        ApplyString(item.ChatGptAccountId, v => account.ChatGptAccountId = v, overwriteMissing);
+        ApplyString(item.Notes, v => account.Notes = v, overwriteMissing);
+        ApplyString(item.Name, v => account.Name = v, overwriteMissing);
+        ApplyString(item.Email, v => account.Email = v, overwriteMissing);
+        ApplyString(item.Platform, v => account.Platform = v, overwriteMissing);
+        ApplyString(item.AccountType, v => account.AccountType = v, overwriteMissing);
+        ApplyString(item.ProxyKey, v => account.ProxyKey = v, overwriteMissing);
+        ApplyString(item.ChatGptUserId, v => account.ChatGptUserId = v, overwriteMissing);
+        ApplyString(item.ClientId, v => account.ClientId = v, overwriteMissing);
+        ApplyString(item.OrganizationId, v => account.OrganizationId = v, overwriteMissing);
+        ApplyString(item.PlanType, v => account.PlanType = v, overwriteMissing);
+        ApplyString(item.RawMetadataJson, v => account.RawMetadataJson = v, overwriteMissing);
+
+        if (item.AccessTokenExpiresAt.HasValue || overwriteMissing) account.AccessTokenExpiresAt = item.AccessTokenExpiresAt;
+        if (item.SubscriptionExpiresAt.HasValue || overwriteMissing) account.SubscriptionExpiresAt = item.SubscriptionExpiresAt;
+        if (item.Priority.HasValue || overwriteMissing) account.Priority = item.Priority;
+        if (item.RateMultiplier.HasValue || overwriteMissing) account.RateMultiplier = item.RateMultiplier;
+        if (item.AutoPauseOnExpired.HasValue || overwriteMissing) account.AutoPauseOnExpired = item.AutoPauseOnExpired;
+        if (item.ConcurrencyLimit is int concurrency && concurrency > 0) account.ConcurrencyLimit = concurrency;
+    }
+
+    private static void ApplyString(string? value, Action<string?> set, bool overwriteMissing)
+    {
+        if (value is not null || overwriteMissing) set(NormalizeOptional(value));
+    }
 
     private static string Preview(string token) =>
         string.IsNullOrEmpty(token) ? "" :
@@ -193,49 +247,4 @@ public static class AccountsEndpoints
     private static string? NormalizeOptional(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private static (bool HasValue, string? Value) ReadOptionalString(JsonElement item, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (!TryGetProperty(item, name, out var prop)) continue;
-            return prop.ValueKind switch
-            {
-                JsonValueKind.String => (true, NormalizeOptional(prop.GetString())),
-                JsonValueKind.Null => (true, null),
-                _ => (true, null)
-            };
-        }
-
-        return (false, null);
-    }
-
-    private static string? ReadString(JsonElement item, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (!TryGetProperty(item, name, out var prop)) continue;
-            if (prop.ValueKind == JsonValueKind.String) return prop.GetString();
-            if (prop.ValueKind == JsonValueKind.Null) return null;
-        }
-
-        return null;
-    }
-
-    private static bool TryGetProperty(JsonElement item, string name, out JsonElement value)
-    {
-        if (item.ValueKind == JsonValueKind.Object)
-        {
-            foreach (var prop in item.EnumerateObject())
-            {
-                if (string.Equals(prop.Name, name, StringComparison.OrdinalIgnoreCase))
-                {
-                    value = prop.Value;
-                    return true;
-                }
-            }
-        }
-
-        value = default;
-        return false;
-    }
 }

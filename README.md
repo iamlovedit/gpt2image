@@ -73,7 +73,7 @@ dotnet run --project ImageRelay.Api
 启动后会：
 - 自动 `EnsureCreatedAsync` 创建所有表
 - 若无 admin 则用上面的环境变量种子一个
-- 若无 model mapping 则种子默认 `gpt-5.4 → gpt-image-2`
+- 若无 model mapping 则种子默认 `gpt-5.4 → gpt-5.4`
 - 监听 `http://localhost:5000`
 
 ### 3. 启动前端
@@ -176,7 +176,7 @@ docker run --rm -p 5000:5000 \
 - SSE 转发（`POST /v1/responses`）：零缓冲透传、LRU 调度、per-account 并发、token 主动/被动刷新、状态机（cooling/banned/invalid）、换账号重试
 - 请求日志：结构化入库、多条件筛选、详情查看
 - Dashboard：核心数字卡片 + 最近 20 条日志
-- 模型映射：只读（种子 `gpt-5.4 → gpt-image-2`）
+- 模型映射：只读（种子 `gpt-5.4 → gpt-5.4`）
 - 调用方限流：per-Key RPM + 并发
 - 冷却恢复后台服务（每 30s 扫描）
 - Serilog → Console + Seq（可选）

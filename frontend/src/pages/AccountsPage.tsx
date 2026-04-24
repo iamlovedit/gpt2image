@@ -7,8 +7,8 @@ import { ReloadOutlined, ImportOutlined, EditOutlined, DeleteOutlined, SyncOutli
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import {
-  Account, AccountStatusClass, AccountStatusLabel, ImportStrategy, UpstreamAccountStatus,
-  deleteAccount, importAccounts, listAccounts, refreshAccount, updateAccount,
+  Account, AccountStatusClass, AccountStatusLabel, ImportItem, ImportStrategy, UpstreamAccountStatus,
+  deleteAccount, importAccounts, listAccounts, refreshAccount, testAccount, updateAccount,
 } from '../api/accounts';
 import { extractError } from '../api/client';
 
@@ -40,6 +40,18 @@ export default function AccountsPage() {
     mutationFn: refreshAccount,
     onSuccess: () => { message.success('刷新成功'); qc.invalidateQueries({ queryKey: ['accounts'] }); },
     onError: (e) => message.error(extractError(e, '刷新失败')),
+  });
+
+  const testMut = useMutation({
+    mutationFn: testAccount,
+    onSuccess: (r) => {
+      const status = r.httpStatus ? `HTTP ${r.httpStatus}` : '网络/刷新错误';
+      const text = `${r.message} · ${status} · ${r.durationMs}ms`;
+      if (r.ok) message.success(text);
+      else message.error(text);
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+    },
+    onError: (e) => message.error(extractError(e, '测试失败')),
   });
 
   const deleteMut = useMutation({
@@ -109,8 +121,20 @@ export default function AccountsPage() {
               </span>
             ),
           },
-          { title: 'access_token', dataIndex: 'accessTokenPreview', render: (v) => <span className="mono">{v}</span> },
-          { title: 'refresh_token', dataIndex: 'refreshTokenPreview', render: (v) => <span className="mono">{v}</span> },
+          {
+            title: '账号信息',
+            width: 220,
+            ellipsis: true,
+            render: (_, row) => {
+              const primary = row.email || row.name || row.notes || '—';
+              return (
+                <Space direction="vertical" size={0}>
+                  <span>{primary}</span>
+                  {row.proxyKey ? <span className="mono" style={{ color: '#8A9ABF', fontSize: 12 }}>{row.proxyKey}</span> : null}
+                </Space>
+              );
+            },
+          },
           {
             title: 'chatgpt-account-id',
             dataIndex: 'chatGptAccountId',
@@ -142,9 +166,16 @@ export default function AccountsPage() {
           {
             title: '操作',
             fixed: 'right',
-            width: 200,
+            width: 240,
             render: (_, row) => (
               <Space size={4}>
+                <Button
+                  size="small"
+                  loading={testMut.isPending && testMut.variables === row.id}
+                  onClick={() => testMut.mutate(row.id)}
+                >
+                  测试
+                </Button>
                 <Button
                   size="small"
                   icon={<SyncOutlined />}
@@ -170,7 +201,7 @@ export default function AccountsPage() {
             ),
           },
         ]}
-        scroll={{ x: 1540 }}
+        scroll={{ x: 1320 }}
       />
 
       <ImportModal
@@ -197,12 +228,8 @@ function ImportModal({
     mutationFn: async () => {
       let parsed: any;
       try { parsed = JSON.parse(text); } catch { throw new Error('JSON 格式错误'); }
-      if (!Array.isArray(parsed)) throw new Error('顶层必须是数组');
-      const items = parsed.map((it: any) => ({
-        accessToken: it.accessToken ?? it.access_token,
-        refreshToken: it.refreshToken ?? it.refresh_token,
-        chatGptAccountId: it.chatGptAccountId ?? it.chatgptAccountId ?? it.chatgpt_account_id,
-      }));
+      const items = normalizeImportItems(parsed);
+      if (items.length === 0) throw new Error('未找到可导入账号，请检查 JSON 顶层数组或 accounts 字段');
       return importAccounts(items, strategy);
     },
     onSuccess: (r) => {
@@ -220,13 +247,13 @@ function ImportModal({
       onCancel={onClose}
       onOk={() => mut.mutate()}
       confirmLoading={mut.isPending}
-      width={640}
+      width={760}
       okText="导入"
       cancelText="取消"
     >
       <div style={{ marginBottom: 12, color: '#8A9ABF', fontSize: 12 }}>
-        粘贴 JSON 数组，每项必须包含 <code>access_token</code> 与 <code>refresh_token</code>，
-        也可选填 <code>chatgpt_account_id</code>。
+        支持粘贴旧版 JSON 数组，或完整导出文件 <code>{'{"accounts":[...]}'}</code>。
+        导出格式会自动读取 <code>credentials.access_token</code>、<code>credentials.refresh_token</code>、备注、邮箱、代理和并发等字段。
       </div>
       <div style={{ marginBottom: 12 }}>
         <Space>
@@ -244,14 +271,57 @@ function ImportModal({
         </Space>
       </div>
       <Input.TextArea
-        rows={14}
+        rows={16}
         className="mono"
-        placeholder='[{"access_token":"...","refresh_token":"...","chatgpt_account_id":"..."}]'
+        placeholder='{"accounts":[{"name":"...","notes":"...","credentials":{"access_token":"...","refresh_token":"...","chatgpt_account_id":"..."}}]}'
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
     </Modal>
   );
+}
+
+function normalizeImportItems(parsed: any): ImportItem[] {
+  const source = Array.isArray(parsed) ? parsed : parsed?.accounts;
+  if (!Array.isArray(source)) throw new Error('顶层必须是账号数组或包含 accounts 数组的对象');
+
+  return source.map((it: any) => {
+    const credentials = it?.credentials ?? {};
+    return {
+      accessToken: credentials.access_token ?? credentials.accessToken ?? it.accessToken ?? it.access_token,
+      refreshToken: credentials.refresh_token ?? credentials.refreshToken ?? it.refreshToken ?? it.refresh_token,
+      chatGptAccountId: credentials.chatgpt_account_id ?? credentials.chatGptAccountId ?? credentials.chatgptAccountId
+        ?? it.chatGptAccountId ?? it.chatgptAccountId ?? it.chatgpt_account_id,
+      accessTokenExpiresAt: credentials.expires_at ?? it.accessTokenExpiresAt ?? it.access_token_expires_at ?? it.expires_at,
+      concurrencyLimit: it.concurrency ?? it.concurrencyLimit ?? it.concurrency_limit,
+      notes: it.notes ?? credentials.email ?? it.name,
+      name: it.name,
+      email: credentials.email ?? it.email,
+      platform: it.platform,
+      accountType: it.type ?? it.accountType ?? it.account_type,
+      proxyKey: it.proxy_key ?? it.proxyKey,
+      priority: it.priority,
+      rateMultiplier: it.rate_multiplier ?? it.rateMultiplier,
+      autoPauseOnExpired: it.auto_pause_on_expired ?? it.autoPauseOnExpired,
+      chatGptUserId: credentials.chatgpt_user_id ?? credentials.chatGptUserId ?? credentials.chatgptUserId,
+      clientId: credentials.client_id ?? credentials.clientId,
+      organizationId: credentials.organization_id ?? credentials.organizationId,
+      planType: credentials.plan_type ?? credentials.planType,
+      subscriptionExpiresAt: credentials.subscription_expires_at ?? credentials.subscriptionExpiresAt,
+      rawMetadataJson: buildRawMetadataJson(it, credentials),
+    };
+  });
+}
+
+function buildRawMetadataJson(item: any, credentials: any): string | undefined {
+  const metadata = {
+    extra: item?.extra,
+    model_mapping: credentials?.model_mapping,
+    _token_version: credentials?._token_version,
+    id_token: credentials?.id_token,
+  };
+  const compact = Object.fromEntries(Object.entries(metadata).filter(([, value]) => value !== undefined && value !== null));
+  return Object.keys(compact).length > 0 ? JSON.stringify(compact) : undefined;
 }
 
 function EditDrawer({

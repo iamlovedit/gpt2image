@@ -30,6 +30,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.AccessToken).IsRequired();
             e.Property(x => x.RefreshToken).IsRequired();
             e.Property(x => x.ChatGptAccountId).HasMaxLength(256);
+            e.Property(x => x.Name).HasMaxLength(256);
+            e.Property(x => x.Email).HasMaxLength(320);
+            e.Property(x => x.Platform).HasMaxLength(64);
+            e.Property(x => x.AccountType).HasMaxLength(64);
+            e.Property(x => x.ProxyKey).HasMaxLength(512);
+            e.Property(x => x.RateMultiplier).HasPrecision(18, 6);
+            e.Property(x => x.ChatGptUserId).HasMaxLength(256);
+            e.Property(x => x.ClientId).HasMaxLength(256);
+            e.Property(x => x.OrganizationId).HasMaxLength(256);
+            e.Property(x => x.PlanType).HasMaxLength(128);
             e.Property(x => x.Status).HasConversion<int>();
             e.HasIndex(x => new { x.Status, x.LastUsedAt });
         });

@@ -15,6 +15,20 @@ public class UpstreamAccount
     public long FailureCount { get; set; }
     public int ConcurrencyLimit { get; set; } = 2;
     public string? Notes { get; set; }
+    public string? Name { get; set; }
+    public string? Email { get; set; }
+    public string? Platform { get; set; }
+    public string? AccountType { get; set; }
+    public string? ProxyKey { get; set; }
+    public int? Priority { get; set; }
+    public decimal? RateMultiplier { get; set; }
+    public bool? AutoPauseOnExpired { get; set; }
+    public string? ChatGptUserId { get; set; }
+    public string? ClientId { get; set; }
+    public string? OrganizationId { get; set; }
+    public string? PlanType { get; set; }
+    public DateTime? SubscriptionExpiresAt { get; set; }
+    public string? RawMetadataJson { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

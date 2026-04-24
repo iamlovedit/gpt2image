@@ -11,6 +11,8 @@ using Microsoft.Extensions.Options;
 
 namespace ImageRelay.Api.Services;
 
+public record NoLeaseFailure(int HttpStatus, string Message, RequestBusinessStatus BusinessStatus, string ErrorType);
+
 public class UpstreamForwarder(
     IHttpClientFactory httpFactory,
     IOptions<UpstreamOptions> upstream,
@@ -99,6 +101,7 @@ public class UpstreamForwarder(
             var excluded = new HashSet<Guid>();
             var maxRetries = proxy.Value.MaxRetries;
             var attempt = 0;
+            var attemptedAnyAccount = false;
 
             while (attempt <= maxRetries)
             {
@@ -107,14 +110,16 @@ public class UpstreamForwarder(
                 var lease = await selector.PickAsync(excluded, ct);
                 if (lease is null)
                 {
-                    log.BusinessStatus = RequestBusinessStatus.NoAvailableAccount;
-                    log.ErrorType = "NoHealthyAccount";
-                    await WriteJsonError(ctx, 503, "no available upstream account");
+                    var failure = ResolveNoLeaseFailure(attemptedAnyAccount, log.ErrorType);
+                    log.BusinessStatus = failure.BusinessStatus;
+                    log.ErrorType = failure.ErrorType;
+                    await WriteJsonError(ctx, failure.HttpStatus, failure.Message);
                     return;
                 }
 
                 using (lease.ConcurrencyRelease)
                 {
+                    attemptedAnyAccount = true;
                     var account = lease.Account;
                     log.UpstreamAccountId = account.Id;
 
@@ -165,6 +170,16 @@ public class UpstreamForwarder(
     }
 
     private enum AttemptOutcome { Success, RetryNextAccount }
+
+    internal static NoLeaseFailure ResolveNoLeaseFailure(bool attemptedAnyAccount, string? currentErrorType)
+    {
+        if (attemptedAnyAccount)
+            return new NoLeaseFailure(502, "all upstream attempts failed", RequestBusinessStatus.UpstreamError,
+                currentErrorType ?? "ExhaustedHealthyAccounts");
+
+        return new NoLeaseFailure(503, "no available upstream account", RequestBusinessStatus.NoAvailableAccount,
+            "NoHealthyAccount");
+    }
 
     private async Task<AttemptOutcome> AttemptAccount(
         HttpContext ctx, AppDbContext db, UpstreamAccount account,
