@@ -246,6 +246,11 @@ export default function AccountsPage() {
                 "—"
               ),
           },
+          {
+            title: "Codex 限流",
+            width: 190,
+            render: (_, row) => <CodexRateLimitCell account={row} />,
+          },
           { title: "成功", dataIndex: "successCount", width: 70 },
           { title: "失败", dataIndex: "failureCount", width: 70 },
           {
@@ -337,7 +342,7 @@ export default function AccountsPage() {
             ),
           },
         ]}
-        scroll={{ x: 1320 }}
+        scroll={{ x: 1510 }}
       />
 
       <ImportModal
@@ -358,6 +363,52 @@ export default function AccountsPage() {
       />
     </Card>
   );
+}
+
+function CodexRateLimitCell({ account }: { account: Account }) {
+  const hasPrimary = account.codexPrimaryUsedPercent !== null;
+  const hasSecondary = account.codexSecondaryUsedPercent !== null;
+  if (!hasPrimary && !hasSecondary) return <>—</>;
+
+  return (
+    <Space direction="vertical" size={0}>
+      <span className="mono">
+        5h: {formatPercent(account.codexPrimaryUsedPercent)} · 7d:{" "}
+        {formatPercent(account.codexSecondaryUsedPercent)}
+      </span>
+      <span style={{ color: "#8A9ABF", fontSize: 12 }}>
+        5h {formatReset(account.codexPrimaryResetAfterSeconds, account.codexPrimaryResetAt)}
+      </span>
+      <span style={{ color: "#8A9ABF", fontSize: 12 }}>
+        7d {formatReset(account.codexSecondaryResetAfterSeconds, account.codexSecondaryResetAt)}
+      </span>
+      {account.codexPrimaryOverSecondaryLimitPercent !== null ? (
+        <span style={{ color: "#8A9ABF", fontSize: 12 }}>
+          over secondary: {account.codexPrimaryOverSecondaryLimitPercent}%
+        </span>
+      ) : null}
+    </Space>
+  );
+}
+
+function formatPercent(value: number | null) {
+  return value === null ? "—" : `${value}%`;
+}
+
+function formatReset(seconds: number | null, resetAt: string | null) {
+  if (seconds !== null) return `剩余 ${formatDuration(seconds)}`;
+  if (resetAt) return dayjs(resetAt).format("MM-DD HH:mm");
+  return "—";
+}
+
+function formatDuration(totalSeconds: number) {
+  const safeSeconds = Math.max(0, totalSeconds);
+  const days = Math.floor(safeSeconds / 86400);
+  const hours = Math.floor((safeSeconds % 86400) / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  if (days > 0) return `${days}天${hours}小时`;
+  if (hours > 0) return `${hours}小时${minutes}分`;
+  return `${minutes}分`;
 }
 
 function ImportModal({

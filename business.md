@@ -34,6 +34,7 @@
 
 - `access_token`（会过期）
 - `refresh_token`
+- `client_id`（必须与该 `refresh_token` 来源匹配，用于刷新 token）
 - `access_token_expires_at`
 - 状态：`healthy` / `cooling` / `rate_limited` / `banned` / `invalid`
 - 冷却截止时间 `cooling_until`
@@ -43,16 +44,17 @@
 
 ### 2.2 批量导入
 
-- JSON 数组格式，每项包含 `access_token` 和 `refresh_token`
+- JSON 数组格式，每项包含 `access_token`、`refresh_token` 和 `client_id`
 - 导入时支持选择重复策略：跳过 / 覆盖 / 报错中止
 - 导入后可选立即触发一次有效性校验（刷新 token 试探）
 
 ### 2.3 Token 生命周期
 
-- 使用前若检测到 `access_token` 即将过期（剩余 < 5 分钟）主动刷新
-- 转发收到 401 被动触发刷新后重试一次
+- 转发请求默认直接使用当前 `access_token`，不再因过期时间主动刷新
+- 转发收到 401 后触发刷新并使用新 token 重试同一账号一次
+- 刷新时使用账号库里的 `client_id`；缺失则直接置为 `invalid`，不使用全局默认值
 - 同一账号刷新需加锁，防止并发重复刷新
-- 刷新失败 → 账号置为 `invalid`，记录失败原因
+- 刷新失败分级处理：400/401/403 或缺少 `access_token` → `invalid`；429/5xx/网络超时等临时错误 → `cooling`
 
 ### 2.4 状态机
 
@@ -60,7 +62,8 @@
 |---|---|---|
 | healthy | 收到 429 | cooling（默认 5 分钟，可配置） |
 | healthy | 收到 403 / 账号封禁类错误 | banned |
-| healthy | refresh 失败 | invalid |
+| healthy | refresh 凭据错误 | invalid |
+| healthy | refresh 临时错误 | cooling |
 | cooling | 冷却时间到 | healthy |
 | 任意 | 管理员手动禁用 / 启用 | disabled / healthy |
 

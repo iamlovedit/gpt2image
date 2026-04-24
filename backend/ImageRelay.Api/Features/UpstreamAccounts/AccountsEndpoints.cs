@@ -29,6 +29,16 @@ public record AccountDto(
     string? OrganizationId,
     string? PlanType,
     DateTime? SubscriptionExpiresAt,
+    int? CodexPrimaryUsedPercent,
+    int? CodexSecondaryUsedPercent,
+    int? CodexPrimaryWindowMinutes,
+    int? CodexSecondaryWindowMinutes,
+    int? CodexPrimaryResetAfterSeconds,
+    int? CodexSecondaryResetAfterSeconds,
+    DateTime? CodexPrimaryResetAt,
+    DateTime? CodexSecondaryResetAt,
+    int? CodexPrimaryOverSecondaryLimitPercent,
+    DateTime? CodexRateLimitUpdatedAt,
     DateTime CreatedAt,
     DateTime UpdatedAt);
 
@@ -202,6 +212,16 @@ public static class AccountsEndpoints
         a.OrganizationId,
         a.PlanType,
         a.SubscriptionExpiresAt,
+        a.CodexPrimaryUsedPercent,
+        a.CodexSecondaryUsedPercent,
+        a.CodexPrimaryWindowMinutes,
+        a.CodexSecondaryWindowMinutes,
+        a.CodexPrimaryResetAfterSeconds,
+        a.CodexSecondaryResetAfterSeconds,
+        a.CodexPrimaryResetAt,
+        a.CodexSecondaryResetAt,
+        a.CodexPrimaryOverSecondaryLimitPercent,
+        a.CodexRateLimitUpdatedAt,
         a.CreatedAt,
         a.UpdatedAt);
 

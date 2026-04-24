@@ -183,13 +183,6 @@ public class UpstreamForwarder(
 
         while (true)
         {
-            try { await refresher.EnsureFreshAsync(account, force: false, ct); }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Proactive refresh failed for account {Id}", account.Id);
-                return AttemptOutcome.RetryNextAccount;
-            }
-
             using var client = httpFactory.CreateClient("upstream");
             using var req = BuildUpstreamRequest(account, headerSettings, rewrittenBody);
 
@@ -207,6 +200,7 @@ public class UpstreamForwarder(
 
             var status = resp.StatusCode;
             log.HttpStatus = (int)status;
+            CodexRateLimitHeaderParser.Apply(account, resp.Headers, DateTime.UtcNow);
 
             if (status == HttpStatusCode.OK)
             {
@@ -274,12 +268,13 @@ public class UpstreamForwarder(
         }
     }
 
-    private HttpRequestMessage BuildUpstreamRequest(
+    internal static HttpRequestMessage BuildUpstreamRequest(
         UpstreamAccount account,
         UpstreamHeaderSettings headerSettings,
-        string body)
+        string body,
+        string responsesUrl)
     {
-        var req = new HttpRequestMessage(HttpMethod.Post, upstream.Value.ResponsesUrl)
+        var req = new HttpRequestMessage(HttpMethod.Post, responsesUrl)
         {
             Content = new StringContent(body, Encoding.UTF8, "application/json")
         };
@@ -299,6 +294,12 @@ public class UpstreamForwarder(
 
         return req;
     }
+
+    private HttpRequestMessage BuildUpstreamRequest(
+        UpstreamAccount account,
+        UpstreamHeaderSettings headerSettings,
+        string body) =>
+        BuildUpstreamRequest(account, headerSettings, body, upstream.Value.ResponsesUrl);
 
     private static void CopyStreamHeaders(HttpResponseMessage resp, HttpResponse target)
     {

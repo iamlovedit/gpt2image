@@ -82,7 +82,17 @@ public class DbSeeder(
             ADD COLUMN IF NOT EXISTS "OrganizationId" character varying(256),
             ADD COLUMN IF NOT EXISTS "PlanType" character varying(128),
             ADD COLUMN IF NOT EXISTS "SubscriptionExpiresAt" timestamp with time zone,
-            ADD COLUMN IF NOT EXISTS "RawMetadataJson" text;
+            ADD COLUMN IF NOT EXISTS "RawMetadataJson" text,
+            ADD COLUMN IF NOT EXISTS "CodexPrimaryUsedPercent" integer,
+            ADD COLUMN IF NOT EXISTS "CodexSecondaryUsedPercent" integer,
+            ADD COLUMN IF NOT EXISTS "CodexPrimaryWindowMinutes" integer,
+            ADD COLUMN IF NOT EXISTS "CodexSecondaryWindowMinutes" integer,
+            ADD COLUMN IF NOT EXISTS "CodexPrimaryResetAfterSeconds" integer,
+            ADD COLUMN IF NOT EXISTS "CodexSecondaryResetAfterSeconds" integer,
+            ADD COLUMN IF NOT EXISTS "CodexPrimaryResetAt" timestamp with time zone,
+            ADD COLUMN IF NOT EXISTS "CodexSecondaryResetAt" timestamp with time zone,
+            ADD COLUMN IF NOT EXISTS "CodexPrimaryOverSecondaryLimitPercent" integer,
+            ADD COLUMN IF NOT EXISTS "CodexRateLimitUpdatedAt" timestamp with time zone;
             """,
             ct);
 

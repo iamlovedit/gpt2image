@@ -29,6 +29,16 @@ public class UpstreamAccount
     public string? PlanType { get; set; }
     public DateTime? SubscriptionExpiresAt { get; set; }
     public string? RawMetadataJson { get; set; }
+    public int? CodexPrimaryUsedPercent { get; set; }
+    public int? CodexSecondaryUsedPercent { get; set; }
+    public int? CodexPrimaryWindowMinutes { get; set; }
+    public int? CodexSecondaryWindowMinutes { get; set; }
+    public int? CodexPrimaryResetAfterSeconds { get; set; }
+    public int? CodexSecondaryResetAfterSeconds { get; set; }
+    public DateTime? CodexPrimaryResetAt { get; set; }
+    public DateTime? CodexSecondaryResetAt { get; set; }
+    public int? CodexPrimaryOverSecondaryLimitPercent { get; set; }
+    public DateTime? CodexRateLimitUpdatedAt { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

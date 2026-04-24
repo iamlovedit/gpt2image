@@ -54,6 +54,16 @@ export interface Account {
   organizationId: string | null;
   planType: string | null;
   subscriptionExpiresAt: string | null;
+  codexPrimaryUsedPercent: number | null;
+  codexSecondaryUsedPercent: number | null;
+  codexPrimaryWindowMinutes: number | null;
+  codexSecondaryWindowMinutes: number | null;
+  codexPrimaryResetAfterSeconds: number | null;
+  codexSecondaryResetAfterSeconds: number | null;
+  codexPrimaryResetAt: string | null;
+  codexSecondaryResetAt: string | null;
+  codexPrimaryOverSecondaryLimitPercent: number | null;
+  codexRateLimitUpdatedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

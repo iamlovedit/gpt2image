@@ -118,11 +118,12 @@ docker run --rm -p 5000:5000 \
 | `BOOTSTRAP_ADMIN_PASSWORD` | 首次管理员密码 | — |
 | `SEQ_URL` | Seq 地址；不设置则不启用 Seq sink | 未设置 |
 | `UPSTREAM_BASE_URL` | 上游 base URL | `https://chatgpt.com` |
-| `UPSTREAM_TOKEN_URL` | refresh_token 交换端点 | `https://auth0.openai.com/oauth/token` |
-| `UPSTREAM_TOKEN_CLIENT_ID` | OAuth client_id | appsettings 默认值 |
+| `UPSTREAM_TOKEN_URL` | refresh_token 交换端点 | `https://auth.openai.com/oauth/token` |
+| `UPSTREAM_TOKEN_CLIENT_ID` | 历史兼容配置；刷新 token 优先使用账号库 `ClientId` 字段 | appsettings 默认值 |
 | `PROXY_MAX_RETRIES` | 单请求最大换账号重试次数 | `2` |
 | `PROXY_COOLING_MINUTES` | 429 冷却分钟数 | `5` |
 | `PROXY_ACCOUNT_CONCURRENCY` | 单账号默认并发上限 | `2` |
+| `PROXY_REFRESH_SKEW_SECONDS` | 预留的 token 提前刷新窗口；当前转发链路仅在 401 后刷新 | `300` |
 
 前端只有一个可选变量 `VITE_API_BASE`：
 
@@ -137,7 +138,7 @@ docker run --rm -p 5000:5000 \
 1. 登录后台 → 进入「上游账号」→ 点击「批量导入」粘贴：
    ```json
    [
-     {"access_token":"<有效 access_token>","refresh_token":"<refresh_token>"}
+     {"access_token":"<有效 access_token>","refresh_token":"<refresh_token>","client_id":"<匹配该 refresh_token 的 client_id>"}
    ]
    ```
    重复策略选「跳过重复」，点「导入」。
@@ -159,9 +160,10 @@ docker run --rm -p 5000:5000 \
 
 ## 失败链路验证
 
-- **token 过期**：手动把上游账号的 `AccessTokenExpiresAt` 设为过去时间（或等它自然过期），下一次请求会自动走 `EnsureFreshAsync` 用 refresh_token 刷新。
+- **token 过期**：转发链路不会因 `AccessTokenExpiresAt` 主动刷新；当上游返回 401 时才用 `refresh_token` 强制刷新并重试同一账号一次。
 - **账号失效**：把 `access_token` 改成垃圾值 + refresh_token 保持有效 → 首次 401 触发刷新 → 刷新成功继续。
-- **refresh 也失败**：把两个 token 都改成垃圾 → 账号状态会被置为 `invalid`。
+- **缺少 client_id**：账号记录没有 `ClientId` 时不会请求上游，刷新会直接失败并把账号置为 `invalid`；需重新导入或编辑补齐。
+- **refresh 也失败**：明确凭据错误（400/401/403 或响应缺少 `access_token`）会置为 `invalid`；429/5xx/网络超时等临时错误会进入 `cooling`。
 - **429**：用 mock server 返回 429 → 账号进 `cooling`，5 分钟后后台服务自动回 `healthy`。
 
 ---
@@ -173,7 +175,7 @@ docker run --rm -p 5000:5000 \
 - 管理后台静态资源同源托管（ASP.NET Core 直接提供前端构建产物）
 - 上游账号：列表 / 筛选 / 批量导入 / 编辑 / 禁用启用 / 手动刷新 / 删除
 - 调用方 API Key：列表 / 创建（明文一次性展示）/ 编辑 / 禁用启用 / 删除
-- SSE 转发（`POST /v1/responses`）：零缓冲透传、LRU 调度、per-account 并发、token 主动/被动刷新、状态机（cooling/banned/invalid）、换账号重试
+- SSE 转发（`POST /v1/responses`）：零缓冲透传、LRU 调度、per-account 并发、401 后 token 刷新、状态机（cooling/banned/invalid）、换账号重试
 - 请求日志：结构化入库、多条件筛选、详情查看
 - Dashboard：核心数字卡片 + 最近 20 条日志
 - 模型映射：只读（种子 `gpt-5.4 → gpt-5.4`）

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net;
 using System.Text.Json.Serialization;
 
 namespace ImageRelay.Api.Services;
@@ -38,49 +39,64 @@ public class TokenRefresher(
                 return;
             }
 
-            var client = httpFactory.CreateClient("upstream");
-            var payload = new
+            var clientId = NormalizeClientId(fresh.ClientId);
+            if (clientId is null)
             {
-                grant_type = "refresh_token",
-                client_id = upstream.Value.TokenClientId,
-                refresh_token = fresh.RefreshToken,
-                redirect_uri = "com.openai.chat://auth0.openai.com/ios/com.openai.chat/callback",
-                scope = "openid profile email offline_access"
-            };
-
-            using var req = new HttpRequestMessage(HttpMethod.Post, upstream.Value.TokenUrl)
-            {
-                Content = JsonContent.Create(payload)
-            };
-            using var resp = await client.SendAsync(req, ct);
-            var body = await resp.Content.ReadAsStringAsync(ct);
-
-            if (!resp.IsSuccessStatusCode)
-            {
-                fresh.Status = UpstreamAccountStatus.Invalid;
-                fresh.LastError = $"refresh failed: HTTP {(int)resp.StatusCode} {Truncate(body, 512)}";
+                MarkPermanentRefreshFailure(fresh, "refresh failed: missing client_id");
                 await db.SaveChangesAsync(ct);
-                logger.LogWarning("Refresh failed for account {Id}: {Status}", fresh.Id, resp.StatusCode);
-                throw new HttpRequestException($"token refresh failed: {resp.StatusCode}");
+                throw new InvalidOperationException("refresh failed: missing client_id");
             }
 
-            var parsed = System.Text.Json.JsonSerializer.Deserialize<RefreshResponse>(body,
-                new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
-            if (parsed is null || string.IsNullOrWhiteSpace(parsed.AccessToken))
+            HttpResponseMessage resp;
+            string body;
+            try
             {
-                fresh.Status = UpstreamAccountStatus.Invalid;
-                fresh.LastError = "refresh response missing access_token";
+                var headerSettings = await db.UpstreamHeaderSettings.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == UpstreamHeaderSettings.SingletonId, ct)
+                    ?? UpstreamHeaderSettings.CreateDefault();
+
+                var client = httpFactory.CreateClient("upstream");
+                using var req = BuildRefreshRequest(upstream.Value.TokenUrl, clientId, fresh.RefreshToken, headerSettings);
+                resp = await client.SendAsync(req, ct);
+                body = await resp.Content.ReadAsStringAsync(ct);
+            }
+            catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+            {
+                MarkTemporaryRefreshFailure(fresh, "refresh failed: timeout", proxy.Value.CoolingMinutes);
                 await db.SaveChangesAsync(ct);
-                throw new InvalidOperationException("refresh response missing access_token");
+                logger.LogWarning("Refresh timed out for account {Id}", fresh.Id);
+                throw;
+            }
+            catch (HttpRequestException ex)
+            {
+                MarkTemporaryRefreshFailure(fresh, "refresh failed: network error " + Truncate(ex.Message, 512), proxy.Value.CoolingMinutes);
+                await db.SaveChangesAsync(ct);
+                logger.LogWarning(ex, "Refresh network error for account {Id}", fresh.Id);
+                throw;
             }
 
-            fresh.AccessToken = parsed.AccessToken;
-            if (!string.IsNullOrWhiteSpace(parsed.RefreshToken)) fresh.RefreshToken = parsed.RefreshToken!;
-            fresh.AccessTokenExpiresAt = DateTime.UtcNow.AddSeconds(parsed.ExpiresIn > 0 ? parsed.ExpiresIn : 3600);
-            fresh.LastError = null;
-            if (fresh.Status == UpstreamAccountStatus.Invalid)
-                fresh.Status = UpstreamAccountStatus.Healthy;
-            await db.SaveChangesAsync(ct);
+            using (resp)
+            {
+                if (!resp.IsSuccessStatusCode)
+                {
+                    MarkHttpRefreshFailure(fresh, resp.StatusCode, body, proxy.Value.CoolingMinutes);
+                    await db.SaveChangesAsync(ct);
+                    logger.LogWarning("Refresh failed for account {Id}: {Status}", fresh.Id, resp.StatusCode);
+                    throw new HttpRequestException($"token refresh failed: {resp.StatusCode}");
+                }
+
+                var parsed = JsonSerializer.Deserialize<RefreshResponse>(body,
+                    new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                if (parsed is null || string.IsNullOrWhiteSpace(parsed.AccessToken))
+                {
+                    MarkPermanentRefreshFailure(fresh, "refresh response missing access_token");
+                    await db.SaveChangesAsync(ct);
+                    throw new InvalidOperationException("refresh response missing access_token");
+                }
+
+                ApplySuccessfulRefresh(fresh, parsed.AccessToken, parsed.RefreshToken, parsed.ExpiresIn);
+                await db.SaveChangesAsync(ct);
+            }
 
             account.AccessToken = fresh.AccessToken;
             account.RefreshToken = fresh.RefreshToken;
@@ -95,7 +111,84 @@ public class TokenRefresher(
         }
     }
 
+    internal static HttpRequestMessage BuildRefreshRequest(
+        string tokenUrl,
+        string clientId,
+        string refreshToken,
+        UpstreamHeaderSettings headerSettings)
+    {
+        var fields = new Dictionary<string, string>
+        {
+            ["grant_type"] = "refresh_token",
+            ["refresh_token"] = refreshToken,
+            ["client_id"] = clientId,
+            ["scope"] = "openid profile email offline_access"
+        };
+
+        var req = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
+        {
+            Content = new FormUrlEncodedContent(fields)
+        };
+        req.Headers.TryAddWithoutValidation(
+            "user-agent",
+            ResolveRequired(headerSettings.UserAgent, UpstreamHeaderSettings.DefaultUserAgent));
+        return req;
+    }
+
+    private static string ResolveRequired(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+
     private static string Truncate(string s, int max) => s.Length <= max ? s : s[..max];
+
+    internal static string? NormalizeClientId(string? clientId) =>
+        string.IsNullOrWhiteSpace(clientId) ? null : clientId.Trim();
+
+    internal static void ApplySuccessfulRefresh(
+        UpstreamAccount account,
+        string accessToken,
+        string? refreshToken,
+        int expiresIn)
+    {
+        account.AccessToken = accessToken;
+        if (!string.IsNullOrWhiteSpace(refreshToken)) account.RefreshToken = refreshToken!;
+        account.AccessTokenExpiresAt = DateTime.UtcNow.AddSeconds(expiresIn > 0 ? expiresIn : 3600);
+        account.LastError = null;
+        account.CoolingUntil = null;
+        if (account.Status is UpstreamAccountStatus.Invalid or UpstreamAccountStatus.Cooling)
+            account.Status = UpstreamAccountStatus.Healthy;
+    }
+
+    internal static void MarkHttpRefreshFailure(
+        UpstreamAccount account,
+        HttpStatusCode statusCode,
+        string body,
+        int coolingMinutes)
+    {
+        var detail = $"refresh failed: HTTP {(int)statusCode} {Truncate(body, 512)}";
+        if (IsPermanentRefreshFailure(statusCode))
+            MarkPermanentRefreshFailure(account, detail);
+        else
+            MarkTemporaryRefreshFailure(account, detail, coolingMinutes);
+    }
+
+    private static bool IsPermanentRefreshFailure(HttpStatusCode statusCode) =>
+        statusCode is HttpStatusCode.BadRequest or HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden;
+
+    private static void MarkPermanentRefreshFailure(UpstreamAccount account, string error)
+    {
+        account.Status = UpstreamAccountStatus.Invalid;
+        account.CoolingUntil = null;
+        account.LastError = error;
+        account.FailureCount++;
+    }
+
+    internal static void MarkTemporaryRefreshFailure(UpstreamAccount account, string error, int coolingMinutes)
+    {
+        account.Status = UpstreamAccountStatus.Cooling;
+        account.CoolingUntil = DateTime.UtcNow.AddMinutes(Math.Max(1, coolingMinutes));
+        account.LastError = error;
+        account.FailureCount++;
+    }
 
     private class RefreshResponse
     {
