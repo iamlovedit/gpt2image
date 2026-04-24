@@ -1,4 +1,4 @@
-import { http } from './client';
+import { apiGet, apiPut } from './client';
 
 export interface UpstreamHeaderSettings {
   userAgent: string;
@@ -8,13 +8,11 @@ export interface UpstreamHeaderSettings {
 }
 
 export async function getUpstreamHeaderSettings(): Promise<UpstreamHeaderSettings> {
-  const { data } = await http.get('/settings/upstream-headers');
-  return data;
+  return apiGet<UpstreamHeaderSettings>('/settings/upstream-headers');
 }
 
 export async function updateUpstreamHeaderSettings(
   payload: UpstreamHeaderSettings
 ): Promise<UpstreamHeaderSettings> {
-  const { data } = await http.put('/settings/upstream-headers', payload);
-  return data;
+  return apiPut<UpstreamHeaderSettings>('/settings/upstream-headers', payload);
 }

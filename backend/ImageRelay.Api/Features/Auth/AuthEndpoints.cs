@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using ImageRelay.Api.Features.Common;
 
 namespace ImageRelay.Api.Features.Auth;
 
@@ -19,23 +20,20 @@ public static class AuthEndpoints
             JwtTokenService jwt) =>
         {
             if (string.IsNullOrWhiteSpace(req.Username) || string.IsNullOrWhiteSpace(req.Password))
-                return Results.BadRequest(new { error = "username and password required" });
+                return ApiResponse.BadRequest("username and password required");
 
             var user = await db.AdminUsers.FirstOrDefaultAsync(u => u.Username == req.Username);
             if (user is null || !hasher.Verify(req.Password, user.PasswordHash))
-                return Results.Unauthorized();
+                return ApiResponse.Unauthorized();
 
-            return Results.Ok(new LoginResponse(jwt.Issue(user), user.Username));
+            return ApiResponse.Ok(new LoginResponse(jwt.Issue(user), user.Username));
         }).AllowAnonymous();
 
-        g.MapGet("/me", (ClaimsPrincipal user) =>
+        g.MapGet("/me", (ClaimsPrincipal user) => ApiResponse.Ok(new
         {
-            return Results.Ok(new
-            {
-                username = user.Identity?.Name ?? user.FindFirstValue("unique_name"),
-                id = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub")
-            });
-        }).RequireAuthorization();
+            username = user.Identity?.Name ?? user.FindFirstValue("unique_name"),
+            id = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub")
+        })).RequireAuthorization();
 
         g.MapPost("/change-password", async (
             [FromBody] ChangePasswordRequest req,
@@ -44,19 +42,19 @@ public static class AuthEndpoints
             PasswordHasher hasher) =>
         {
             if (string.IsNullOrWhiteSpace(req.NewPassword) || req.NewPassword.Length < 6)
-                return Results.BadRequest(new { error = "new password too short" });
+                return ApiResponse.BadRequest("new password too short");
 
             var idStr = principal.FindFirstValue("sub") ?? principal.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!Guid.TryParse(idStr, out var id)) return Results.Unauthorized();
+            if (!Guid.TryParse(idStr, out var id)) return ApiResponse.Unauthorized();
 
             var user = await db.AdminUsers.FirstOrDefaultAsync(u => u.Id == id);
-            if (user is null) return Results.Unauthorized();
+            if (user is null) return ApiResponse.Unauthorized();
             if (!hasher.Verify(req.OldPassword, user.PasswordHash))
-                return Results.BadRequest(new { error = "old password incorrect" });
+                return ApiResponse.BadRequest("old password incorrect");
 
             user.PasswordHash = hasher.Hash(req.NewPassword);
             await db.SaveChangesAsync();
-            return Results.Ok(new { ok = true });
+            return ApiResponse.Ok();
         }).RequireAuthorization();
     }
 }

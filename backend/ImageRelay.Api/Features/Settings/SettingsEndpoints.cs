@@ -1,3 +1,5 @@
+using ImageRelay.Api.Features.Common;
+
 namespace ImageRelay.Api.Features.Settings;
 
 public record UpstreamHeaderSettingsDto(
@@ -21,7 +23,7 @@ public static class SettingsEndpoints
         g.MapGet("/upstream-headers", async (AppDbContext db, CancellationToken ct) =>
         {
             var settings = await GetOrCreateAsync(db, ct);
-            return Results.Ok(ToDto(settings));
+            return ApiResponse.Ok(ToDto(settings));
         });
 
         g.MapPut("/upstream-headers", async (
@@ -30,13 +32,13 @@ public static class SettingsEndpoints
             CancellationToken ct) =>
         {
             var userAgent = NormalizeRequired(req.UserAgent, "userAgent");
-            if (userAgent is null) return Results.BadRequest(new { error = "userAgent required" });
+            if (userAgent is null) return ApiResponse.BadRequest("userAgent required");
 
             var version = NormalizeRequired(req.Version, "version");
-            if (version is null) return Results.BadRequest(new { error = "version required" });
+            if (version is null) return ApiResponse.BadRequest("version required");
 
             var originator = NormalizeRequired(req.Originator, "originator");
-            if (originator is null) return Results.BadRequest(new { error = "originator required" });
+            if (originator is null) return ApiResponse.BadRequest("originator required");
 
             var settings = await GetOrCreateAsync(db, ct);
             settings.UserAgent = userAgent;
@@ -45,7 +47,7 @@ public static class SettingsEndpoints
             settings.SessionId = NormalizeOptional(req.SessionId);
 
             await db.SaveChangesAsync(ct);
-            return Results.Ok(ToDto(settings));
+            return ApiResponse.Ok(ToDto(settings));
         });
     }
 

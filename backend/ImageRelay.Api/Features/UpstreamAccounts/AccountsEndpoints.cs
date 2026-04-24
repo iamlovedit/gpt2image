@@ -1,3 +1,5 @@
+using ImageRelay.Api.Features.Common;
+
 namespace ImageRelay.Api.Features.UpstreamAccounts;
 
 public record AccountDto(
@@ -70,14 +72,14 @@ public static class AccountsEndpoints
                 .Select(a => ToDto(a))
                 .ToListAsync();
 
-            return Results.Ok(new { total, page, pageSize, items = rows });
+            return ApiResponse.Ok(new { total, page, pageSize, items = rows });
         });
 
         g.MapPost("/import", async ([FromBody] JsonElement req, AppDbContext db) =>
         {
             var payload = AccountImportParser.NormalizeImportItems(req);
             if (!payload.IsValidShape || payload.Items.Count == 0)
-                return Results.BadRequest(new { error = "items is empty" });
+                return ApiResponse.BadRequest("items is empty");
 
             int inserted = 0, updated = 0, skipped = 0;
             foreach (var item in payload.Items)
@@ -110,19 +112,19 @@ public static class AccountsEndpoints
                             updated++;
                             break;
                         case ImportDuplicateStrategy.Fail:
-                            return Results.Conflict(new { error = "duplicate refresh_token found" });
+                            return ApiResponse.Conflict("duplicate refresh_token found");
                     }
                 }
             }
 
             await db.SaveChangesAsync();
-            return Results.Ok(new { inserted, updated, skipped });
+            return ApiResponse.Ok(new { inserted, updated, skipped });
         });
 
         g.MapPatch("/{id:guid}", async (Guid id, [FromBody] AccountUpdateRequest req, AppDbContext db) =>
         {
             var a = await db.UpstreamAccounts.FindAsync(id);
-            if (a is null) return Results.NotFound();
+            if (a is null) return ApiResponse.NotFound();
             if (req.Status.HasValue)
             {
                 a.Status = req.Status.Value;
@@ -136,40 +138,40 @@ public static class AccountsEndpoints
             if (req.ConcurrencyLimit is int c && c > 0) a.ConcurrencyLimit = c;
             if (req.ChatGptAccountId is not null) a.ChatGptAccountId = NormalizeOptional(req.ChatGptAccountId);
             await db.SaveChangesAsync();
-            return Results.Ok(ToDto(a));
+            return ApiResponse.Ok(ToDto(a));
         });
 
         g.MapPost("/{id:guid}/refresh", async (Guid id, AppDbContext db, TokenRefresher refresher, CancellationToken ct) =>
         {
             var a = await db.UpstreamAccounts.FindAsync([id], ct);
-            if (a is null) return Results.NotFound();
+            if (a is null) return ApiResponse.NotFound();
             try
             {
                 await refresher.EnsureFreshAsync(a, force: true, ct);
-                return Results.Ok(ToDto(a));
+                return ApiResponse.Ok(ToDto(a));
             }
             catch (Exception ex)
             {
-                return Results.BadRequest(new { error = ex.Message });
+                return ApiResponse.BadRequest(ex.Message);
             }
         });
 
         g.MapPost("/{id:guid}/test", async (Guid id, AppDbContext db, AccountConnectivityTester tester, CancellationToken ct) =>
         {
             var a = await db.UpstreamAccounts.FindAsync([id], ct);
-            if (a is null) return Results.NotFound();
+            if (a is null) return ApiResponse.NotFound();
 
             var result = await tester.TestAsync(db, a, ct);
-            return Results.Ok(result);
+            return ApiResponse.Ok(result);
         });
 
         g.MapDelete("/{id:guid}", async (Guid id, AppDbContext db) =>
         {
             var a = await db.UpstreamAccounts.FindAsync(id);
-            if (a is null) return Results.NotFound();
+            if (a is null) return ApiResponse.NotFound();
             db.UpstreamAccounts.Remove(a);
             await db.SaveChangesAsync();
-            return Results.NoContent();
+            return ApiResponse.Ok();
         });
     }
 

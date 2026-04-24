@@ -1,3 +1,5 @@
+using ImageRelay.Api.Features.Common;
+
 namespace ImageRelay.Api.Features.ModelMappings;
 
 public record ModelMappingCreateRequest(
@@ -23,7 +25,7 @@ public static class ModelsEndpoints
             var rows = await db.ModelMappings.AsNoTracking()
                 .OrderBy(m => m.ExternalName)
                 .ToListAsync();
-            return Results.Ok(rows);
+            return ApiResponse.Ok(rows);
         });
 
         g.MapPost("/", async ([FromBody] ModelMappingCreateRequest req, AppDbContext db) =>
@@ -33,7 +35,7 @@ public static class ModelsEndpoints
 
             var externalName = req.ExternalName.Trim();
             var exists = await db.ModelMappings.AnyAsync(m => m.ExternalName == externalName);
-            if (exists) return Results.Conflict(new { error = "externalName already exists" });
+            if (exists) return ApiResponse.Conflict("externalName already exists");
 
             var mapping = new ModelMapping
             {
@@ -43,13 +45,13 @@ public static class ModelsEndpoints
             };
             db.ModelMappings.Add(mapping);
             await db.SaveChangesAsync();
-            return Results.Ok(mapping);
+            return ApiResponse.Ok(mapping);
         });
 
         g.MapPatch("/{id:guid}", async (Guid id, [FromBody] ModelMappingUpdateRequest req, AppDbContext db) =>
         {
             var mapping = await db.ModelMappings.FindAsync(id);
-            if (mapping is null) return Results.NotFound();
+            if (mapping is null) return ApiResponse.NotFound();
 
             var externalName = req.ExternalName is null ? mapping.ExternalName : req.ExternalName.Trim();
             var upstreamName = req.UpstreamName is null ? mapping.UpstreamName : req.UpstreamName.Trim();
@@ -58,7 +60,7 @@ public static class ModelsEndpoints
 
             var exists = await db.ModelMappings
                 .AnyAsync(m => m.Id != id && m.ExternalName == externalName);
-            if (exists) return Results.Conflict(new { error = "externalName already exists" });
+            if (exists) return ApiResponse.Conflict("externalName already exists");
 
             mapping.ExternalName = externalName;
             mapping.UpstreamName = upstreamName;
@@ -66,30 +68,30 @@ public static class ModelsEndpoints
             mapping.UpdatedAt = DateTime.UtcNow;
 
             await db.SaveChangesAsync();
-            return Results.Ok(mapping);
+            return ApiResponse.Ok(mapping);
         });
 
         g.MapDelete("/{id:guid}", async (Guid id, AppDbContext db) =>
         {
             var mapping = await db.ModelMappings.FindAsync(id);
-            if (mapping is null) return Results.NotFound();
+            if (mapping is null) return ApiResponse.NotFound();
 
             db.ModelMappings.Remove(mapping);
             await db.SaveChangesAsync();
-            return Results.NoContent();
+            return ApiResponse.Ok();
         });
     }
 
     private static IResult? ValidateModelNames(string? externalName, string? upstreamName)
     {
         if (string.IsNullOrWhiteSpace(externalName))
-            return Results.BadRequest(new { error = "externalName required" });
+            return ApiResponse.BadRequest("externalName required");
         if (string.IsNullOrWhiteSpace(upstreamName))
-            return Results.BadRequest(new { error = "upstreamName required" });
+            return ApiResponse.BadRequest("upstreamName required");
         if (externalName.Trim().Length > MaxModelNameLength)
-            return Results.BadRequest(new { error = "externalName too long" });
+            return ApiResponse.BadRequest("externalName too long");
         if (upstreamName.Trim().Length > MaxModelNameLength)
-            return Results.BadRequest(new { error = "upstreamName too long" });
+            return ApiResponse.BadRequest("upstreamName too long");
 
         return null;
     }

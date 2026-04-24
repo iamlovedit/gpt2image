@@ -1,4 +1,4 @@
-import { http } from './client';
+import { apiDelete, apiGet, apiPatch, apiPost } from './client';
 
 export enum UpstreamAccountStatus {
   Healthy = 0,
@@ -71,8 +71,7 @@ export async function listAccounts(params: {
   page?: number;
   pageSize?: number;
 }): Promise<Paged<Account>> {
-  const { data } = await http.get('/accounts', { params });
-  return data;
+  return apiGet<Paged<Account>>('/accounts', { params });
 }
 
 export enum ImportStrategy { Skip = 0, Overwrite = 1, Fail = 2 }
@@ -101,8 +100,7 @@ export interface ImportItem {
 }
 
 export async function importAccounts(items: ImportItem[], strategy: ImportStrategy) {
-  const { data } = await http.post('/accounts/import', { items, strategy });
-  return data as { inserted: number; updated: number; skipped: number };
+  return apiPost<{ inserted: number; updated: number; skipped: number }>('/accounts/import', { items, strategy });
 }
 
 export async function updateAccount(id: string, patch: {
@@ -111,13 +109,11 @@ export async function updateAccount(id: string, patch: {
   concurrencyLimit?: number;
   chatGptAccountId?: string;
 }): Promise<Account> {
-  const { data } = await http.patch(`/accounts/${id}`, patch);
-  return data;
+  return apiPatch<Account>(`/accounts/${id}`, patch);
 }
 
 export async function refreshAccount(id: string): Promise<Account> {
-  const { data } = await http.post(`/accounts/${id}/refresh`);
-  return data;
+  return apiPost<Account>(`/accounts/${id}/refresh`);
 }
 
 export interface AccountTestResult {
@@ -129,10 +125,9 @@ export interface AccountTestResult {
 }
 
 export async function testAccount(id: string): Promise<AccountTestResult> {
-  const { data } = await http.post(`/accounts/${id}/test`);
-  return data;
+  return apiPost<AccountTestResult>(`/accounts/${id}/test`);
 }
 
 export async function deleteAccount(id: string): Promise<void> {
-  await http.delete(`/accounts/${id}`);
+  await apiDelete(`/accounts/${id}`);
 }

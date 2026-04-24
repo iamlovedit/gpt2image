@@ -1,3 +1,5 @@
+using ImageRelay.Api.Features.Common;
+
 namespace ImageRelay.Api.Features.ClientKeys;
 
 public record KeyDto(
@@ -41,13 +43,13 @@ public static class KeysEndpoints
                 .OrderByDescending(k => k.CreatedAt)
                 .Select(k => ToDto(k))
                 .ToListAsync();
-            return Results.Ok(rows);
+            return ApiResponse.Ok(rows);
         });
 
         g.MapPost("/", async ([FromBody] KeyCreateRequest req, AppDbContext db, ApiKeyGenerator gen) =>
         {
             if (string.IsNullOrWhiteSpace(req.Name))
-                return Results.BadRequest(new { error = "name required" });
+                return ApiResponse.BadRequest("name required");
 
             var generated = gen.Generate();
             var key = new ClientApiKey
@@ -62,13 +64,13 @@ public static class KeysEndpoints
             };
             db.ClientApiKeys.Add(key);
             await db.SaveChangesAsync();
-            return Results.Ok(new KeyCreateResponse(ToDto(key), generated.Plaintext));
+            return ApiResponse.Ok(new KeyCreateResponse(ToDto(key), generated.Plaintext));
         });
 
         g.MapPatch("/{id:guid}", async (Guid id, [FromBody] KeyUpdateRequest req, AppDbContext db) =>
         {
             var k = await db.ClientApiKeys.FindAsync(id);
-            if (k is null) return Results.NotFound();
+            if (k is null) return ApiResponse.NotFound();
             if (!string.IsNullOrWhiteSpace(req.Name)) k.Name = req.Name.Trim();
             if (req.Status.HasValue) k.Status = req.Status.Value;
             if (req.ExpiresAt.HasValue) k.ExpiresAt = req.ExpiresAt;
@@ -76,16 +78,16 @@ public static class KeysEndpoints
             if (req.ConcurrencyLimit is int cc && cc >= 0) k.ConcurrencyLimit = cc;
             if (req.Notes is not null) k.Notes = req.Notes;
             await db.SaveChangesAsync();
-            return Results.Ok(ToDto(k));
+            return ApiResponse.Ok(ToDto(k));
         });
 
         g.MapDelete("/{id:guid}", async (Guid id, AppDbContext db) =>
         {
             var k = await db.ClientApiKeys.FindAsync(id);
-            if (k is null) return Results.NotFound();
+            if (k is null) return ApiResponse.NotFound();
             db.ClientApiKeys.Remove(k);
             await db.SaveChangesAsync();
-            return Results.NoContent();
+            return ApiResponse.Ok();
         });
     }
 

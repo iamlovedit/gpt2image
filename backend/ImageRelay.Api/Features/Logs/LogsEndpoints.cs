@@ -1,3 +1,5 @@
+using ImageRelay.Api.Features.Common;
+
 namespace ImageRelay.Api.Features.Logs;
 
 public static class LogsEndpoints
@@ -47,13 +49,13 @@ public static class LogsEndpoints
                     l.ClientKeyId.HasValue && clientKeyNames.TryGetValue(l.ClientKeyId.Value, out var name) ? name : null))
                 .ToList();
 
-            return Results.Ok(new { total, page, pageSize, items });
+            return ApiResponse.Ok(new { total, page, pageSize, items });
         });
 
         g.MapGet("/{id:guid}", async (Guid id, AppDbContext db) =>
         {
             var log = await db.RequestLogs.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
-            if (log is null) return Results.NotFound();
+            if (log is null) return ApiResponse.NotFound();
 
             string? clientKeyName = null;
             if (log.ClientKeyId.HasValue)
@@ -64,7 +66,7 @@ public static class LogsEndpoints
                     .FirstOrDefaultAsync();
             }
 
-            return Results.Ok(RequestLogDto.From(log, clientKeyName));
+            return ApiResponse.Ok(RequestLogDto.From(log, clientKeyName));
         });
     }
 }

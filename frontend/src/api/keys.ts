@@ -1,4 +1,4 @@
-import { http } from './client';
+import { apiDelete, apiGet, apiPatch, apiPost } from './client';
 
 export enum ClientKeyStatus { Active = 0, Disabled = 1 }
 
@@ -16,8 +16,7 @@ export interface ClientKey {
 }
 
 export async function listKeys(): Promise<ClientKey[]> {
-  const { data } = await http.get('/keys');
-  return data;
+  return apiGet<ClientKey[]>('/keys');
 }
 
 export async function createKey(payload: {
@@ -27,8 +26,7 @@ export async function createKey(payload: {
   concurrencyLimit?: number;
   notes?: string;
 }): Promise<{ key: ClientKey; plaintext: string }> {
-  const { data } = await http.post('/keys', payload);
-  return data;
+  return apiPost<{ key: ClientKey; plaintext: string }>('/keys', payload);
 }
 
 export async function updateKey(id: string, patch: Partial<{
@@ -39,10 +37,9 @@ export async function updateKey(id: string, patch: Partial<{
   concurrencyLimit: number;
   notes: string;
 }>): Promise<ClientKey> {
-  const { data } = await http.patch(`/keys/${id}`, patch);
-  return data;
+  return apiPatch<ClientKey>(`/keys/${id}`, patch);
 }
 
 export async function deleteKey(id: string): Promise<void> {
-  await http.delete(`/keys/${id}`);
+  await apiDelete(`/keys/${id}`);
 }

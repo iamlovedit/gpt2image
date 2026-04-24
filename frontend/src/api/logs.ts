@@ -1,4 +1,4 @@
-import { http } from './client';
+import { apiGet } from './client';
 import type { Paged } from './accounts';
 
 export enum RequestBusinessStatus {
@@ -55,6 +55,5 @@ export async function listLogs(params: {
   page?: number;
   pageSize?: number;
 }): Promise<Paged<RequestLog>> {
-  const { data } = await http.get('/logs', { params });
-  return data;
+  return apiGet<Paged<RequestLog>>('/logs', { params });
 }

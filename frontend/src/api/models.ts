@@ -1,4 +1,4 @@
-import { http } from './client';
+import { apiDelete, apiGet, apiPatch, apiPost } from './client';
 
 export interface ModelMapping {
   id: string;
@@ -10,8 +10,7 @@ export interface ModelMapping {
 }
 
 export async function listModels(): Promise<ModelMapping[]> {
-  const { data } = await http.get('/models');
-  return data;
+  return apiGet<ModelMapping[]>('/models');
 }
 
 export async function createModel(payload: {
@@ -19,8 +18,7 @@ export async function createModel(payload: {
   upstreamName: string;
   isEnabled?: boolean;
 }): Promise<ModelMapping> {
-  const { data } = await http.post('/models', payload);
-  return data;
+  return apiPost<ModelMapping>('/models', payload);
 }
 
 export async function updateModel(id: string, patch: Partial<{
@@ -28,10 +26,9 @@ export async function updateModel(id: string, patch: Partial<{
   upstreamName: string;
   isEnabled: boolean;
 }>): Promise<ModelMapping> {
-  const { data } = await http.patch(`/models/${id}`, patch);
-  return data;
+  return apiPatch<ModelMapping>(`/models/${id}`, patch);
 }
 
 export async function deleteModel(id: string): Promise<void> {
-  await http.delete(`/models/${id}`);
+  await apiDelete(`/models/${id}`);
 }

@@ -1,3 +1,5 @@
+using ImageRelay.Api.Features.Common;
+
 namespace ImageRelay.Api.Features.Dashboard;
 
 public static class DashboardEndpoints
@@ -43,7 +45,7 @@ public static class DashboardEndpoints
                 .Take(20)
                 .ToListAsync();
 
-            return Results.Ok(new
+            return ApiResponse.Ok(new
             {
                 total24h,
                 success24h,
@@ -67,7 +69,7 @@ public static class DashboardEndpoints
             var statsRange = RequestStatsService.CreateRange(range, DateTime.UtcNow);
             if (statsRange is null)
             {
-                return Results.BadRequest(new { error = "range must be one of: today, 7d, 30d" });
+                return ApiResponse.BadRequest("range must be one of: today, 7d, 30d");
             }
 
             var logs = await db.RequestLogs.AsNoTracking()
@@ -95,7 +97,7 @@ public static class DashboardEndpoints
                 .Where(k => clientKeyIds.Contains(k.Id))
                 .ToDictionaryAsync(k => k.Id, k => k.Name);
 
-            return Results.Ok(RequestStatsService.Build(statsRange, logs, accountNames, clientKeyNames));
+            return ApiResponse.Ok(RequestStatsService.Build(statsRange, logs, accountNames, clientKeyNames));
         });
     }
 }

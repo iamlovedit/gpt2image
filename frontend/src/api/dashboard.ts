@@ -1,4 +1,4 @@
-import { http } from './client';
+import { apiGet } from './client';
 import type { RequestLog } from './logs';
 import type { RequestBusinessStatus } from './logs';
 import type { UpstreamAccountStatus } from './accounts';
@@ -21,8 +21,7 @@ export interface DashboardSummary {
 }
 
 export async function getSummary(): Promise<DashboardSummary> {
-  const { data } = await http.get('/dashboard/summary');
-  return data;
+  return apiGet<DashboardSummary>('/dashboard/summary');
 }
 
 export type DashboardStatsRange = 'today' | '7d' | '30d';
@@ -78,6 +77,5 @@ export interface RequestStatsResponse {
 }
 
 export async function getRequestStats(range: DashboardStatsRange): Promise<RequestStatsResponse> {
-  const { data } = await http.get('/dashboard/request-stats', { params: { range } });
-  return data;
+  return apiGet<RequestStatsResponse>('/dashboard/request-stats', { params: { range } });
 }
