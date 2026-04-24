@@ -43,7 +43,7 @@ export default function LoginPage() {
           background: "rgba(16, 23, 42, 0.85)",
           backdropFilter: "blur(8px)",
         }}
-        bordered={false}
+        variant={"borderless"}
       >
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <div
