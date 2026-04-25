@@ -66,11 +66,16 @@ public static class AccountImportParser
             ReadInt(item, "priority"),
             ReadDecimal(item, "rate_multiplier", "rateMultiplier"),
             ReadBool(item, "auto_pause_on_expired", "autoPauseOnExpired"),
-            ReadString(credentials, "chatgpt_user_id", "chatGptUserId", "chatgptUserId"),
-            ReadString(credentials, "client_id", "clientId"),
-            ReadString(credentials, "organization_id", "organizationId"),
-            ReadString(credentials, "plan_type", "planType"),
-            ReadDateTime(credentials, "subscription_expires_at", "subscriptionExpiresAt"),
+            ReadString(credentials, "chatgpt_user_id", "chatGptUserId", "chatgptUserId")
+                ?? ReadString(item, "chatGptUserId", "chatgptUserId", "chatgpt_user_id"),
+            ReadString(credentials, "client_id", "clientId")
+                ?? ReadString(item, "clientId", "client_id"),
+            ReadString(credentials, "organization_id", "organizationId")
+                ?? ReadString(item, "organizationId", "organization_id"),
+            ReadString(credentials, "plan_type", "planType")
+                ?? ReadString(item, "planType", "plan_type"),
+            ReadDateTime(credentials, "subscription_expires_at", "subscriptionExpiresAt")
+                ?? ReadDateTime(item, "subscriptionExpiresAt", "subscription_expires_at"),
             BuildRawMetadataJson(item, credentials));
     }
 

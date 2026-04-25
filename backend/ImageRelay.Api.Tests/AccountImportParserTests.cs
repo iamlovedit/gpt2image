@@ -94,7 +94,15 @@ public class AccountImportParserTests
         {
           "strategy": "Overwrite",
           "items": [
-            {"accessToken":"access-3","refreshToken":"refresh-3"},
+            {
+              "accessToken":"access-3",
+              "refreshToken":"refresh-3",
+              "chatGptUserId":"user-3",
+              "clientId":"client-3",
+              "organizationId":"org-3",
+              "planType":"plus",
+              "subscriptionExpiresAt":"2026-04-30T13:49:29+08:00"
+            },
             {"accessToken":"","refreshToken":""}
           ]
         }
@@ -106,6 +114,11 @@ public class AccountImportParserTests
         Assert.Equal(ImportDuplicateStrategy.Overwrite, payload.Strategy);
         Assert.Equal(2, payload.Items.Count);
         Assert.Equal("access-3", payload.Items[0].AccessToken);
+        Assert.Equal("user-3", payload.Items[0].ChatGptUserId);
+        Assert.Equal("client-3", payload.Items[0].ClientId);
+        Assert.Equal("org-3", payload.Items[0].OrganizationId);
+        Assert.Equal("plus", payload.Items[0].PlanType);
+        Assert.Equal(new DateTime(2026, 4, 30, 5, 49, 29, DateTimeKind.Utc), payload.Items[0].SubscriptionExpiresAt);
     }
 
     [Fact]
