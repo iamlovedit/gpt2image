@@ -1,6 +1,6 @@
 namespace ImageRelay.Api.Services;
 
-public class AccountConnectivityStatusUpdater(IOptions<ProxyOptions> proxy)
+public class AccountConnectivityStatusUpdater(IOptions<ProxyOptions> proxy) : IAccountConnectivityStatusUpdater
 {
     public void MarkSuccess(UpstreamAccount account)
     {

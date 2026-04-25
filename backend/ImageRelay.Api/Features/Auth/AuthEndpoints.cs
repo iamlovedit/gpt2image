@@ -16,8 +16,8 @@ public static class AuthEndpoints
         g.MapPost("/login", async (
             [FromBody] LoginRequest req,
             AppDbContext db,
-            PasswordHasher hasher,
-            JwtTokenService jwt) =>
+            IPasswordHasher hasher,
+            IJwtTokenService jwt) =>
         {
             if (string.IsNullOrWhiteSpace(req.Username) || string.IsNullOrWhiteSpace(req.Password))
                 return ApiResponse.BadRequest("username and password required");
@@ -39,7 +39,7 @@ public static class AuthEndpoints
             [FromBody] ChangePasswordRequest req,
             ClaimsPrincipal principal,
             AppDbContext db,
-            PasswordHasher hasher) =>
+            IPasswordHasher hasher) =>
         {
             if (string.IsNullOrWhiteSpace(req.NewPassword) || req.NewPassword.Length < 6)
                 return ApiResponse.BadRequest("new password too short");

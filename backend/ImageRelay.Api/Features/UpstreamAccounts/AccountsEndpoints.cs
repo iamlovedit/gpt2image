@@ -151,7 +151,7 @@ public static class AccountsEndpoints
             return ApiResponse.Ok(ToDto(a));
         });
 
-        g.MapPost("/{id:guid}/refresh", async (Guid id, AppDbContext db, TokenRefresher refresher, CancellationToken ct) =>
+        g.MapPost("/{id:guid}/refresh", async (Guid id, AppDbContext db, ITokenRefresher refresher, CancellationToken ct) =>
         {
             var a = await db.UpstreamAccounts.FindAsync([id], ct);
             if (a is null) return ApiResponse.NotFound();
@@ -166,7 +166,7 @@ public static class AccountsEndpoints
             }
         });
 
-        g.MapPost("/{id:guid}/test", async (Guid id, AppDbContext db, AccountConnectivityTester tester, CancellationToken ct) =>
+        g.MapPost("/{id:guid}/test", async (Guid id, AppDbContext db, IAccountConnectivityTester tester, CancellationToken ct) =>
         {
             var a = await db.UpstreamAccounts.FindAsync([id], ct);
             if (a is null) return ApiResponse.NotFound();

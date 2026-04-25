@@ -3,7 +3,7 @@ namespace ImageRelay.Api.Data;
 public class DbSeeder(
     AppDbContext db,
     IOptions<BootstrapOptions> bootstrap,
-    PasswordHasher hasher,
+    IPasswordHasher hasher,
     ILogger<DbSeeder> logger)
 {
     public async Task SeedAsync(CancellationToken ct = default)

@@ -1,6 +1,6 @@
 namespace ImageRelay.Api.Services;
 
-public class PasswordHasher
+public class PasswordHasher : IPasswordHasher
 {
     public string Hash(string password) =>
         BCrypt.Net.BCrypt.HashPassword(password, workFactor: 11);

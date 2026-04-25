@@ -46,7 +46,7 @@ public static class KeysEndpoints
             return ApiResponse.Ok(rows);
         });
 
-        g.MapPost("/", async ([FromBody] KeyCreateRequest req, AppDbContext db, ApiKeyGenerator gen) =>
+        g.MapPost("/", async ([FromBody] KeyCreateRequest req, AppDbContext db, IApiKeyGenerator gen) =>
         {
             if (string.IsNullOrWhiteSpace(req.Name))
                 return ApiResponse.BadRequest("name required");

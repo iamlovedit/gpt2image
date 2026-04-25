@@ -9,7 +9,7 @@ public class TokenRefresher(
     IOptions<UpstreamOptions> upstream,
     IOptions<ProxyOptions> proxy,
     IServiceScopeFactory scopeFactory,
-    ILogger<TokenRefresher> logger)
+    ILogger<TokenRefresher> logger) : ITokenRefresher
 {
     private static readonly ConcurrentDictionary<Guid, SemaphoreSlim> Locks = new();
 

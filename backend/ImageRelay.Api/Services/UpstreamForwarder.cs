@@ -10,13 +10,13 @@ public class UpstreamForwarder(
     IHttpClientFactory httpFactory,
     IOptions<UpstreamOptions> upstream,
     IOptions<ProxyOptions> proxy,
-    TokenRefresher refresher,
-    ILogger<UpstreamForwarder> logger)
+    ITokenRefresher refresher,
+    ILogger<UpstreamForwarder> logger) : IUpstreamForwarder
 {
     public async Task ForwardAsync(
         HttpContext ctx,
         ClientApiKey clientKey,
-        AccountSelector selector,
+        IAccountSelector selector,
         AppDbContext db,
         CancellationToken ct)
     {

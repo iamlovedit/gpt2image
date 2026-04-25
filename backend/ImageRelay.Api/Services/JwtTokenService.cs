@@ -4,7 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace ImageRelay.Api.Services;
 
-public class JwtTokenService(IOptions<JwtOptions> options)
+public class JwtTokenService(IOptions<JwtOptions> options) : IJwtTokenService
 {
     public string Issue(AdminUser user)
     {

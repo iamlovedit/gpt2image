@@ -4,7 +4,7 @@ namespace ImageRelay.Api.Services;
 
 public record GeneratedApiKey(string Plaintext, string Prefix, string Hash);
 
-public class ApiKeyGenerator
+public class ApiKeyGenerator : IApiKeyGenerator
 {
     private const string KeyPrefix = "sk-";
 

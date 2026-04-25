@@ -70,18 +70,18 @@ builder.Services.AddHttpClient("upstream", c =>
 });
 
 // ---------- Singletons ----------
-builder.Services.AddSingleton<PasswordHasher>();
-builder.Services.AddSingleton<ApiKeyGenerator>();
-builder.Services.AddSingleton<JwtTokenService>();
-builder.Services.AddSingleton<AccountConcurrencyRegistry>();
-builder.Services.AddSingleton<ClientRateLimiter>();
-builder.Services.AddSingleton<TokenRefresher>();
-builder.Services.AddSingleton<UpstreamForwarder>();
-builder.Services.AddSingleton<AccountConnectivityStatusUpdater>();
-builder.Services.AddSingleton<AccountConnectivityTester>();
+builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+builder.Services.AddSingleton<IApiKeyGenerator, ApiKeyGenerator>();
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+builder.Services.AddSingleton<IAccountConcurrencyRegistry, AccountConcurrencyRegistry>();
+builder.Services.AddSingleton<IClientRateLimiter, ClientRateLimiter>();
+builder.Services.AddSingleton<ITokenRefresher, TokenRefresher>();
+builder.Services.AddSingleton<IUpstreamForwarder, UpstreamForwarder>();
+builder.Services.AddSingleton<IAccountConnectivityStatusUpdater, AccountConnectivityStatusUpdater>();
+builder.Services.AddSingleton<IAccountConnectivityTester, AccountConnectivityTester>();
 
 // ---------- Scoped ----------
-builder.Services.AddScoped<AccountSelector>();
+builder.Services.AddScoped<IAccountSelector, AccountSelector>();
 builder.Services.AddScoped<DbSeeder>();
 
 // ---------- Hosted ----------

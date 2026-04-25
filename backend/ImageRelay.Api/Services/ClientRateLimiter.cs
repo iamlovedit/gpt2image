@@ -6,7 +6,7 @@ public enum RateLimitReason { None, Rpm, Concurrency }
 
 public record RateLimitLease(IDisposable Release, bool Ok, RateLimitReason Reason);
 
-public class ClientRateLimiter
+public class ClientRateLimiter : IClientRateLimiter
 {
     private readonly ConcurrentDictionary<Guid, KeyBucket> _buckets = new();
 

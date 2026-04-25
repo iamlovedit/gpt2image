@@ -4,7 +4,7 @@ namespace ImageRelay.Api.Services;
 
 public record AccountLease(UpstreamAccount Account, IDisposable ConcurrencyRelease);
 
-public class AccountSelector(AppDbContext db, AccountConcurrencyRegistry registry, ILogger<AccountSelector> logger)
+public class AccountSelector(AppDbContext db, IAccountConcurrencyRegistry registry, ILogger<AccountSelector> logger) : IAccountSelector
 {
     public async Task<AccountLease?> PickAsync(HashSet<Guid> excluded, CancellationToken ct)
     {
@@ -44,7 +44,7 @@ public class AccountSelector(AppDbContext db, AccountConcurrencyRegistry registr
     }
 }
 
-public class AccountConcurrencyRegistry
+public class AccountConcurrencyRegistry : IAccountConcurrencyRegistry
 {
     private readonly ConcurrentDictionary<Guid, SemaphoreSlim> _map = new();
 

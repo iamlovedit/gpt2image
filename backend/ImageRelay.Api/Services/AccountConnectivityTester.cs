@@ -7,8 +7,8 @@ namespace ImageRelay.Api.Services;
 public class AccountConnectivityTester(
     IHttpClientFactory httpFactory,
     IOptions<UpstreamOptions> upstream,
-    TokenRefresher refresher,
-    AccountConnectivityStatusUpdater statusUpdater)
+    ITokenRefresher refresher,
+    IAccountConnectivityStatusUpdater statusUpdater) : IAccountConnectivityTester
 {
     public const string ConnectivityExternalModel = "gpt-5.4";
     public const string ConnectivityTestInput = "hi";

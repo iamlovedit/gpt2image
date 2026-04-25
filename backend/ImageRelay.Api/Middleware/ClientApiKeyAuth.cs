@@ -4,7 +4,7 @@ public static class ClientApiKeyAuth
 {
     public const string ContextKey = "ClientApiKey";
 
-    public static async Task<ClientApiKey?> ResolveAsync(HttpContext ctx, AppDbContext db, ApiKeyGenerator keyGen)
+    public static async Task<ClientApiKey?> ResolveAsync(HttpContext ctx, AppDbContext db, IApiKeyGenerator keyGen)
     {
         var auth = ctx.Request.Headers.Authorization.ToString();
         if (string.IsNullOrWhiteSpace(auth) || !auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))

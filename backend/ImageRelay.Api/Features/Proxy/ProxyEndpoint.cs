@@ -13,10 +13,10 @@ public static class ProxyEndpoint
     {
         var services = ctx.RequestServices;
         var db = services.GetRequiredService<AppDbContext>();
-        var keyGen = services.GetRequiredService<ApiKeyGenerator>();
-        var rateLimiter = services.GetRequiredService<ClientRateLimiter>();
-        var selector = services.GetRequiredService<AccountSelector>();
-        var forwarder = services.GetRequiredService<UpstreamForwarder>();
+        var keyGen = services.GetRequiredService<IApiKeyGenerator>();
+        var rateLimiter = services.GetRequiredService<IClientRateLimiter>();
+        var selector = services.GetRequiredService<IAccountSelector>();
+        var forwarder = services.GetRequiredService<IUpstreamForwarder>();
         var ct = ctx.RequestAborted;
 
         var clientKey = await ClientApiKeyAuth.ResolveAsync(ctx, db, keyGen);
