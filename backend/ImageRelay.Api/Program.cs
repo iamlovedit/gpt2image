@@ -199,7 +199,6 @@ static void ApplyEnvironmentOverrides(IConfiguration cfg)
     Map("SEQ_URL", "Seq:Url");
     Map("UPSTREAM_BASE_URL", "Upstream:BaseUrl");
     Map("UPSTREAM_TOKEN_URL", "Upstream:TokenUrl");
-    Map("UPSTREAM_TOKEN_CLIENT_ID", "Upstream:TokenClientId");
     Map("PROXY_MAX_RETRIES", "Proxy:MaxRetries");
     Map("PROXY_COOLING_MINUTES", "Proxy:CoolingMinutes");
     Map("PROXY_ACCOUNT_CONCURRENCY", "Proxy:AccountConcurrency");

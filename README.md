@@ -3,8 +3,6 @@
 前端管理后台（React + Ant Design 暗色）+ 后端 SSE 转发（.NET 10 + PostgreSQL），
 对外保持 OpenAI 兼容协议（`POST /v1/responses`）。
 
-需求来源：`business.md`。方案：`.claude/plans/synthetic-wondering-bachman.md`。
-
 ---
 
 ## 目录
@@ -21,13 +19,13 @@ agents-fdd777ad09/
 
 ## 环境依赖
 
-| 组件 | 版本 |
-|---|---|
-| .NET SDK | 10.0 |
-| Node.js | ≥ 20 |
-| pnpm | ≥ 9 |
-| PostgreSQL | ≥ 14 |
-| Seq (可选) | 日志聚合，不配置则跳过 |
+| 组件          | 版本                          |
+| ------------- | ----------------------------- |
+| .NET SDK      | 10.0                          |
+| Node.js       | ≥ 20                          |
+| pnpm          | ≥ 9                           |
+| PostgreSQL    | ≥ 14                          |
+| Seq (可选)    | 日志聚合，不配置则跳过        |
 | Docker (可选) | 用于单容器生产构建 / 本地联调 |
 
 ## 首次启动
@@ -71,6 +69,7 @@ dotnet run --project ImageRelay.Api
 ```
 
 启动后会：
+
 - 自动执行 EF Core migrations 创建或升级所有表
 - 若无 admin 则用上面的环境变量种子一个
 - 若无 model mapping 则种子默认 `gpt-5.4 → gpt-5.4`
@@ -99,6 +98,23 @@ Vite 会将 `/api` 和 `/v1` 代理到 `http://localhost:5000`，本地开发不
 
 ### 4. 生产单容器运行
 
+推荐使用 Docker Compose 同时启动应用和 PostgreSQL：
+
+```bash
+cp .env.example .env
+# 修改 .env 中的 POSTGRES_PASSWORD、JWT_SECRET、BOOTSTRAP_ADMIN_PASSWORD
+
+docker compose up -d --build
+```
+
+若要同时启动 Seq 日志服务，将 `.env` 中 `SEQ_URL` 设置为 `http://seq:80`，然后运行：
+
+```bash
+docker compose --profile observability up -d --build
+```
+
+也可以手动构建并连接已有数据库：
+
 ```bash
 docker build -t image-relay .
 
@@ -120,20 +136,14 @@ docker run --rm -p 5000:5000 \
 
 ## 环境变量
 
-| 名称 | 作用 | 默认 |
-|---|---|---|
-| `DATABASE_URL` | Postgres 连接串（覆盖 `ConnectionStrings:Default`） | `appsettings.json` 中的值 |
-| `JWT_SECRET` | JWT 签名密钥，至少 16 字节 | — |
-| `BOOTSTRAP_ADMIN_USERNAME` | 首次管理员用户名 | `admin` |
-| `BOOTSTRAP_ADMIN_PASSWORD` | 首次管理员密码 | — |
-| `SEQ_URL` | Seq 地址；不设置则不启用 Seq sink | 未设置 |
-| `UPSTREAM_BASE_URL` | 上游 base URL | `https://chatgpt.com` |
-| `UPSTREAM_TOKEN_URL` | refresh_token 交换端点 | `https://auth.openai.com/oauth/token` |
-| `UPSTREAM_TOKEN_CLIENT_ID` | 历史兼容配置；刷新 token 优先使用账号库 `ClientId` 字段 | appsettings 默认值 |
-| `PROXY_MAX_RETRIES` | 单请求最大换账号重试次数 | `2` |
-| `PROXY_COOLING_MINUTES` | 429 冷却分钟数 | `5` |
-| `PROXY_ACCOUNT_CONCURRENCY` | 单账号默认并发上限 | `2` |
-| `PROXY_REFRESH_SKEW_SECONDS` | 预留的 token 提前刷新窗口；当前转发链路仅在 401 后刷新 | `300` |
+| 名称                         | 作用                                                   | 默认                      |
+| ---------------------------- | ------------------------------------------------------ | ------------------------- |
+| `DATABASE_URL`               | Postgres 连接串（覆盖 `ConnectionStrings:Default`）    | `appsettings.json` 中的值 |
+| `JWT_SECRET`                 | JWT 签名密钥，至少 16 字节                             | —                         |
+| `BOOTSTRAP_ADMIN_USERNAME`   | 首次管理员用户名                                       | `admin`                   |
+| `BOOTSTRAP_ADMIN_PASSWORD`   | 首次管理员密码                                         | —                         |
+| `SEQ_URL`                    | Seq 地址；不设置则不启用 Seq sink                      | 未设置                    |
+| `PROXY_REFRESH_SKEW_SECONDS` | 预留的 token 提前刷新窗口；当前转发链路仅在 401 后刷新 | `300`                     |
 
 前端只有一个可选变量 `VITE_API_BASE`：
 
@@ -146,22 +156,30 @@ docker run --rm -p 5000:5000 \
 ## 端到端冒烟测试
 
 1. 登录后台 → 进入「上游账号」→ 点击「批量导入」粘贴：
+
    ```json
    [
-     {"access_token":"<有效 access_token>","refresh_token":"<refresh_token>","client_id":"<匹配该 refresh_token 的 client_id>"}
+     {
+       "access_token": "<有效 access_token>",
+       "refresh_token": "<refresh_token>",
+       "client_id": "<匹配该 refresh_token 的 client_id>"
+     }
    ]
    ```
+
    重复策略选「跳过重复」，点「导入」。
 
 2. 进入「API Key」→ 点「创建 Key」→ 填名称 → 保存 → 弹窗复制 **完整明文 Key**（只显示一次）。
 
 3. 终端测试流式转发：
+
    ```bash
    curl -N http://localhost:5000/v1/responses \
      -H "Authorization: Bearer sk-xxx" \
      -H "Content-Type: application/json" \
      -d @image_generation_request.json
    ```
+
    期待看到与 `image_generation_response` 同形态的 SSE 事件流。该接口面向服务端客户端或同源页面调用；若是其他浏览器 origin，需自行通过网关或后端代理转发。
 
 4. 回到「请求日志」→ 刚刚那条记录应该出现；状态为「成功」，SSE 事件数 > 0。
@@ -181,6 +199,7 @@ docker run --rm -p 5000:5000 \
 ## 当前 MVP 范围
 
 ✅ 已实现
+
 - 管理员 JWT 登录 / 改密
 - 管理后台静态资源同源托管（ASP.NET Core 直接提供前端构建产物）
 - 上游账号：列表 / 筛选 / 批量导入 / 编辑 / 禁用启用 / 手动刷新 / 删除
@@ -195,6 +214,7 @@ docker run --rm -p 5000:5000 \
 - 单 Docker 镜像构建前后端并同源交付
 
 🔜 后续迭代（MVP 范围外）
+
 - Dashboard 趋势图
 - 模型映射增删改 UI
 - 系统设置可视化

@@ -75,7 +75,7 @@ public class TokenRefresherTests
             {"access_token":"new-access","refresh_token":"new-refresh","expires_in":1800}
             """, Encoding.UTF8, "application/json")
         });
-        var refresher = CreateRefresher(services, httpFactory, globalClientId: "global-client-id");
+        var refresher = CreateRefresher(services, httpFactory);
 
         await refresher.EnsureFreshAsync(account, force: true, CancellationToken.None);
 
@@ -105,7 +105,7 @@ public class TokenRefresherTests
             {"access_token":"new-access","refresh_token":"new-refresh","expires_in":1800}
             """, Encoding.UTF8, "application/json")
         });
-        var refresher = CreateRefresher(services, httpFactory, globalClientId: "global-client-id");
+        var refresher = CreateRefresher(services, httpFactory);
 
         await refresher.EnsureFreshAsync(account, force: true, CancellationToken.None);
 
@@ -130,7 +130,7 @@ public class TokenRefresherTests
         };
         await using var services = CreateServices(account);
         var httpFactory = new RecordingHttpClientFactory(new HttpResponseMessage(HttpStatusCode.OK));
-        var refresher = CreateRefresher(services, httpFactory, globalClientId: "global-client-id");
+        var refresher = CreateRefresher(services, httpFactory);
 
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             refresher.EnsureFreshAsync(account, force: true, CancellationToken.None));
@@ -272,14 +272,12 @@ public class TokenRefresherTests
 
     private static TokenRefresher CreateRefresher(
         IHttpClientFactory httpFactory,
-        IServiceProvider services,
-        string globalClientId) =>
+        IServiceProvider services) =>
         new(
             httpFactory,
             Options.Create(new UpstreamOptions
             {
-                TokenUrl = "https://auth.openai.com/oauth/token",
-                TokenClientId = globalClientId
+                TokenUrl = "https://auth.openai.com/oauth/token"
             }),
             Options.Create(new ProxyOptions { CoolingMinutes = 7, RefreshSkewSeconds = 300 }),
             services.GetRequiredService<IServiceScopeFactory>(),
@@ -287,9 +285,8 @@ public class TokenRefresherTests
 
     private static TokenRefresher CreateRefresher(
         ServiceProvider services,
-        IHttpClientFactory httpFactory,
-        string globalClientId) =>
-        CreateRefresher(httpFactory, services, globalClientId);
+        IHttpClientFactory httpFactory) =>
+        CreateRefresher(httpFactory, services);
 
     private static async Task<Dictionary<string, string>> ReadFormFieldsAsync(HttpContent content)
     {
