@@ -11,6 +11,7 @@ import {
   Form,
   InputNumber,
   Drawer,
+  Dropdown,
   Popconfirm,
   App,
 } from "antd";
@@ -20,6 +21,10 @@ import {
   EditOutlined,
   DeleteOutlined,
   SyncOutlined,
+  MoreOutlined,
+  CheckCircleOutlined,
+  StopOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -214,24 +219,9 @@ export default function AccountsPage() {
               return (
                 <Space direction="vertical" size={0}>
                   <span>{primary}</span>
-                  {row.proxyKey ? (
-                    <span
-                      className="mono"
-                      style={{ color: "#8A9ABF", fontSize: 12 }}
-                    >
-                      {row.proxyKey}
-                    </span>
-                  ) : null}
                 </Space>
               );
             },
-          },
-          {
-            title: "chatgpt-account-id",
-            dataIndex: "chatGptAccountId",
-            width: 220,
-            ellipsis: true,
-            render: (v) => (v ? <span className="mono">{v}</span> : "—"),
           },
           {
             title: "过期时间",
@@ -251,8 +241,6 @@ export default function AccountsPage() {
             width: 190,
             render: (_, row) => <CodexRateLimitCell account={row} />,
           },
-          { title: "成功", dataIndex: "successCount", width: 70 },
-          { title: "失败", dataIndex: "failureCount", width: 70 },
           {
             title: "最近使用",
             dataIndex: "lastUsedAt",
@@ -274,75 +262,32 @@ export default function AccountsPage() {
           {
             title: "操作",
             fixed: "right",
-            width: 240,
+            width: 90,
             render: (_, row) => (
-              <Space size={4}>
-                <Button
-                  size="small"
-                  loading={testMut.isPending && testMut.variables === row.id}
-                  onClick={() => testMut.mutate(row.id)}
-                >
-                  测试
-                </Button>
-                <Button
-                  size="small"
-                  icon={<SyncOutlined />}
-                  loading={
-                    refreshMut.isPending && refreshMut.variables === row.id
-                  }
-                  onClick={() => refreshMut.mutate(row.id)}
-                >
-                  刷新
-                </Button>
-                <Button
-                  size="small"
-                  icon={<EditOutlined />}
-                  onClick={() => setEditing(row)}
-                >
-                  编辑
-                </Button>
-                {row.status === UpstreamAccountStatus.Disabled ? (
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      toggleMut.mutate({
-                        id: row.id,
-                        status: UpstreamAccountStatus.Healthy,
-                      })
-                    }
-                  >
-                    启用
-                  </Button>
-                ) : (
-                  <Button
-                    size="small"
-                    danger
-                    onClick={() =>
-                      toggleMut.mutate({
-                        id: row.id,
-                        status: UpstreamAccountStatus.Disabled,
-                      })
-                    }
-                  >
-                    禁用
-                  </Button>
-                )}
-                <Popconfirm
-                  title="确认删除？"
-                  onConfirm={() => deleteMut.mutate(row.id)}
-                >
-                  <Button
-                    size="small"
-                    danger
-                    type="text"
-                    icon={<DeleteOutlined />}
-                  />
-                </Popconfirm>
-              </Space>
+              <AccountActionsDropdown
+                account={row}
+                testLoading={testMut.isPending && testMut.variables === row.id}
+                refreshLoading={
+                  refreshMut.isPending && refreshMut.variables === row.id
+                }
+                onTest={() => testMut.mutate(row.id)}
+                onRefresh={() => refreshMut.mutate(row.id)}
+                onEdit={() => setEditing(row)}
+                onToggle={() =>
+                  toggleMut.mutate({
+                    id: row.id,
+                    status:
+                      row.status === UpstreamAccountStatus.Disabled
+                        ? UpstreamAccountStatus.Healthy
+                        : UpstreamAccountStatus.Disabled,
+                  })
+                }
+                onDelete={() => deleteMut.mutate(row.id)}
+              />
             ),
           },
         ]}
-        scroll={{ x: 1510 }}
+        scroll={{ x: 1160 }}
       />
 
       <ImportModal
@@ -362,6 +307,82 @@ export default function AccountsPage() {
         }}
       />
     </Card>
+  );
+}
+
+function AccountActionsDropdown({
+  account,
+  testLoading,
+  refreshLoading,
+  onTest,
+  onRefresh,
+  onEdit,
+  onToggle,
+  onDelete,
+}: {
+  account: Account;
+  testLoading: boolean;
+  refreshLoading: boolean;
+  onTest: () => void;
+  onRefresh: () => void;
+  onEdit: () => void;
+  onToggle: () => void;
+  onDelete: () => void;
+}) {
+  const isDisabled = account.status === UpstreamAccountStatus.Disabled;
+
+  return (
+    <Dropdown
+      trigger={["click"]}
+      menu={{
+        items: [
+          {
+            key: "test",
+            label: testLoading ? "测试中..." : "测试",
+            icon: <ThunderboltOutlined />,
+            disabled: testLoading,
+            onClick: onTest,
+          },
+          {
+            key: "refresh",
+            label: refreshLoading ? "刷新中..." : "刷新",
+            icon: <SyncOutlined />,
+            disabled: refreshLoading,
+            onClick: onRefresh,
+          },
+          {
+            key: "edit",
+            label: "编辑",
+            icon: <EditOutlined />,
+            onClick: onEdit,
+          },
+          {
+            key: "toggle",
+            label: isDisabled ? "启用" : "禁用",
+            icon: isDisabled ? <CheckCircleOutlined /> : <StopOutlined />,
+            danger: !isDisabled,
+            onClick: onToggle,
+          },
+          {
+            type: "divider",
+          },
+          {
+            key: "delete",
+            danger: true,
+            label: (
+              <Popconfirm title="确认删除？" onConfirm={onDelete}>
+                <span onClick={(e) => e.stopPropagation()}>删除</span>
+              </Popconfirm>
+            ),
+            icon: <DeleteOutlined />,
+          },
+        ],
+      }}
+    >
+      <Button size="small" icon={<MoreOutlined />}>
+        操作
+      </Button>
+    </Dropdown>
   );
 }
 
