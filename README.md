@@ -71,10 +71,20 @@ dotnet run --project ImageRelay.Api
 ```
 
 启动后会：
-- 自动 `EnsureCreatedAsync` 创建所有表
+- 自动执行 EF Core migrations 创建或升级所有表
 - 若无 admin 则用上面的环境变量种子一个
 - 若无 model mapping 则种子默认 `gpt-5.4 → gpt-5.4`
 - 监听 `http://localhost:5000`
+
+> 注意：旧版本使用 `EnsureCreatedAsync` 直接建表。若本地已有旧开发库，请先删除数据库或换一个新的数据库名后再启动；本项目不对旧 `EnsureCreatedAsync` 数据库做原地 baseline 迁移。
+
+常用 migration 命令：
+
+```bash
+cd backend
+dotnet ef migrations add <Name> --project ImageRelay.Api
+dotnet ef database update --project ImageRelay.Api
+```
 
 ### 3. 启动前端
 

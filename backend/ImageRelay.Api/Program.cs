@@ -109,6 +109,9 @@ var spaFiles = spaAssetsAvailable ? new PhysicalFileProvider(spaRoot) : null;
 // ---------- Migrate + seed ----------
 using (var scope = app.Services.CreateScope())
 {
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.MigrateAsync();
+
     var seeder = scope.ServiceProvider.GetRequiredService<DbSeeder>();
     await seeder.SeedAsync();
 }
