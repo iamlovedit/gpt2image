@@ -6,7 +6,33 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>ImageRelay.Api</RootNamespace>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultRazorGenerateItems>false</EnableDefaultRazorGenerateItems>
+    <EnableDefaultRazorComponentItems>false</EnableDefaultRazorComponentItems>
   </PropertyGroup>
+
+  <!-- Keep these explicit so the Linux SDK image does not pass unmatched SDK globs to build tasks. -->
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <Compile Include="Configuration/*.cs" />
+    <Compile Include="Data/*.cs" />
+    <Compile Include="Data/Entities/*.cs" />
+    <Compile Include="Features/Auth/*.cs" />
+    <Compile Include="Features/ClientKeys/*.cs" />
+    <Compile Include="Features/Common/*.cs" />
+    <Compile Include="Features/Dashboard/*.cs" />
+    <Compile Include="Features/Logs/*.cs" />
+    <Compile Include="Features/ModelMappings/*.cs" />
+    <Compile Include="Features/Proxy/*.cs" />
+    <Compile Include="Features/Settings/*.cs" />
+    <Compile Include="Features/UpstreamAccounts/*.cs" />
+    <Compile Include="Middleware/*.cs" />
+    <Compile Include="Migrations/*.cs" />
+    <Compile Include="Services/*.cs" />
+    <Content Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />

@@ -5,17 +5,15 @@ COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY frontend/ ./
+COPY image_generation_request.json image_parse_request.json /src/
 RUN pnpm build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend-publish
 WORKDIR /src
 
-COPY backend/ImageRelay.sln ./backend/ImageRelay.sln
-COPY backend/ImageRelay.Api/ImageRelay.Api.csproj ./backend/ImageRelay.Api/ImageRelay.Api.csproj
-RUN dotnet restore ./backend/ImageRelay.sln
-
 COPY backend/ ./backend/
-RUN dotnet publish ./backend/ImageRelay.Api/ImageRelay.Api.csproj -c Release -o /app/publish --no-restore
+RUN dotnet restore ./backend/ImageRelay.Api/ImageRelay.Api.csproj
+RUN dotnet publish ./backend/ImageRelay.Api/ImageRelay.Api.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
