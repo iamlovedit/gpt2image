@@ -1,8 +1,6 @@
 services:
   app:
-    build:
-      context: .
-    image: image-relay:${IMAGE_TAG:-local}
+    image: ghcr.io/iamlovedit/gpt2image
     restart: unless-stopped
     depends_on:
       db:
