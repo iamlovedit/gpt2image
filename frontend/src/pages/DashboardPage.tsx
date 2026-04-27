@@ -25,6 +25,7 @@ import {
   YAxis,
 } from "recharts";
 import { useMemo, useState } from "react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const chartColors = {
   cyan: "#00D4FF",
@@ -91,6 +92,8 @@ function ChartCard({
   loading?: boolean;
   children: React.ReactNode;
 }) {
+  const isMobile = useIsMobile();
+
   return (
     <Card
       className="glow-box"
@@ -101,7 +104,7 @@ function ChartCard({
         </span>
       }
       loading={loading}
-      styles={{ body: { height: 320 } }}
+      styles={{ body: { height: isMobile ? 260 : 320 } }}
     >
       {children}
     </Card>
@@ -152,6 +155,7 @@ function tooltipProps() {
 }
 
 export default function DashboardPage() {
+  const isMobile = useIsMobile();
   const [range, setRange] = useState<DashboardStatsRange>("today");
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard-summary"],
@@ -225,7 +229,7 @@ export default function DashboardPage() {
       </Row>
 
       <Card
-        className="glow-box"
+        className="glow-box app-page-card"
         variant="borderless"
         title={
           <Space align="center" wrap>
@@ -354,8 +358,8 @@ export default function DashboardPage() {
                       data={statusData}
                       dataKey="value"
                       nameKey="name"
-                      innerRadius={58}
-                      outerRadius={104}
+                      innerRadius={isMobile ? 42 : 58}
+                      outerRadius={isMobile ? 82 : 104}
                       paddingAngle={3}
                     >
                       {statusData.map((_, index) => (
@@ -373,10 +377,19 @@ export default function DashboardPage() {
                 <EmptyChart />
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats?.errorTypeBreakdown ?? []} layout="vertical" margin={{ left: 32 }}>
+                  <BarChart
+                    data={stats?.errorTypeBreakdown ?? []}
+                    layout="vertical"
+                    margin={{ left: isMobile ? 8 : 32 }}
+                  >
                     <CartesianGrid stroke="rgba(138,154,191,0.12)" horizontal={false} />
                     <XAxis type="number" {...chartThemeProps()} />
-                    <YAxis type="category" dataKey="errorType" width={130} {...chartThemeProps()} />
+                    <YAxis
+                      type="category"
+                      dataKey="errorType"
+                      width={isMobile ? 90 : 130}
+                      {...chartThemeProps()}
+                    />
                     <Tooltip {...tooltipProps()} />
                     <Bar dataKey="count" name="错误数" fill={chartColors.red} />
                   </BarChart>
@@ -400,6 +413,7 @@ export default function DashboardPage() {
                     { title: "成功", dataIndex: "successCount", width: 80 },
                     { title: "失败", dataIndex: "failureCount", width: 80 },
                   ]}
+                  scroll={{ x: 420 }}
                 />
               )}
             </ChartCard>

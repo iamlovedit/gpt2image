@@ -43,6 +43,7 @@ import {
   updateAccount,
 } from "@/api/accounts";
 import { extractError } from "@/api/client";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const statusOptions = [
   {
@@ -74,6 +75,7 @@ const statusOptions = [
 export default function AccountsPage() {
   const qc = useQueryClient();
   const { message } = App.useApp();
+  const isMobile = useIsMobile();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [status, setStatus] = useState<UpstreamAccountStatus | undefined>();
@@ -131,7 +133,7 @@ export default function AccountsPage() {
 
   return (
     <Card
-      className="glow-box"
+      className="glow-box app-page-card"
       variant={"borderless"}
       title={
         <span className="tech-title" style={{ fontSize: 13 }}>
@@ -139,12 +141,16 @@ export default function AccountsPage() {
         </span>
       }
       extra={
-        <Space>
+        <Space
+          className="page-toolbar"
+          wrap
+          style={{ width: isMobile ? "100%" : undefined }}
+        >
           <Select
             allowClear
             placeholder="状态筛选"
             options={statusOptions}
-            style={{ width: 140 }}
+            style={{ width: isMobile ? "100%" : 140 }}
             value={status}
             onChange={(v) => {
               setStatus(v);
@@ -158,11 +164,12 @@ export default function AccountsPage() {
               setKeyword(v);
               setPage(1);
             }}
-            style={{ width: 240 }}
+            style={{ width: isMobile ? "100%" : 240 }}
           />
           <Button
             icon={<ReloadOutlined />}
             onClick={() => qc.invalidateQueries({ queryKey: ["accounts"] })}
+            style={{ width: isMobile ? "100%" : undefined }}
           >
             刷新
           </Button>
@@ -170,6 +177,7 @@ export default function AccountsPage() {
             type="primary"
             icon={<ImportOutlined />}
             onClick={() => setImportOpen(true)}
+            style={{ width: isMobile ? "100%" : undefined }}
           >
             批量导入
           </Button>
@@ -185,6 +193,8 @@ export default function AccountsPage() {
           current: page,
           pageSize,
           total: data?.total ?? 0,
+          showLessItems: isMobile,
+          showSizeChanger: !isMobile,
           onChange: (p, s) => {
             setPage(p);
             setPageSize(s);
@@ -261,7 +271,7 @@ export default function AccountsPage() {
           },
           {
             title: "操作",
-            fixed: "right",
+            fixed: isMobile ? undefined : ("right" as const),
             width: 90,
             render: (_, row) => (
               <AccountActionsDropdown
@@ -292,6 +302,7 @@ export default function AccountsPage() {
 
       <ImportModal
         open={importOpen}
+        isMobile={isMobile}
         onClose={() => setImportOpen(false)}
         onDone={() => {
           setImportOpen(false);
@@ -300,6 +311,7 @@ export default function AccountsPage() {
       />
       <EditDrawer
         account={editing}
+        isMobile={isMobile}
         onClose={() => setEditing(null)}
         onDone={() => {
           setEditing(null);
@@ -434,10 +446,12 @@ function formatDuration(totalSeconds: number) {
 
 function ImportModal({
   open,
+  isMobile,
   onClose,
   onDone,
 }: {
   open: boolean;
+  isMobile: boolean;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -476,7 +490,7 @@ function ImportModal({
       onCancel={onClose}
       onOk={() => mut.mutate()}
       confirmLoading={mut.isPending}
-      width={760}
+      width={isMobile ? "calc(100vw - 24px)" : 760}
       okText="导入"
       cancelText="取消"
     >
@@ -487,12 +501,15 @@ function ImportModal({
         <code>credentials.refresh_token</code>、备注、邮箱、代理和并发等字段。
       </div>
       <div style={{ marginBottom: 12 }}>
-        <Space>
+        <Space
+          direction={isMobile ? "vertical" : "horizontal"}
+          style={{ width: "100%" }}
+        >
           <span>重复策略：</span>
           <Select
             value={strategy}
             onChange={setStrategy}
-            style={{ width: 160 }}
+            style={{ width: isMobile ? "100%" : 160 }}
             options={[
               { value: ImportStrategy.Skip, label: "跳过重复" },
               { value: ImportStrategy.Overwrite, label: "覆盖重复" },
@@ -502,7 +519,7 @@ function ImportModal({
         </Space>
       </div>
       <Input.TextArea
-        rows={16}
+        rows={isMobile ? 12 : 16}
         className="mono"
         placeholder='{"accounts":[{"name":"...","notes":"...","credentials":{"access_token":"...","refresh_token":"...","chatgpt_account_id":"..."}}]}'
         value={text}
@@ -585,10 +602,12 @@ function buildRawMetadataJson(item: any, credentials: any): string | undefined {
 
 function EditDrawer({
   account,
+  isMobile,
   onClose,
   onDone,
 }: {
   account: Account | null;
+  isMobile: boolean;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -609,7 +628,7 @@ function EditDrawer({
       title="编辑账号"
       open={!!account}
       onClose={onClose}
-      width={360}
+      width={isMobile ? "100%" : 360}
       destroyOnClose
       extra={
         <Button

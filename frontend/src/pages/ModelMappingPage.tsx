@@ -24,10 +24,12 @@ import {
   updateModel,
 } from "@/api/models";
 import { extractError } from "@/api/client";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function ModelMappingPage() {
   const qc = useQueryClient();
   const { message } = App.useApp();
+  const isMobile = useIsMobile();
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<ModelMapping | null>(null);
 
@@ -54,7 +56,7 @@ export default function ModelMappingPage() {
 
   return (
     <Card
-      className="glow-box"
+      className="glow-box app-page-card"
       variant="borderless"
       title={
         <span className="tech-title" style={{ fontSize: 13 }}>
@@ -66,6 +68,7 @@ export default function ModelMappingPage() {
           type="primary"
           icon={<PlusOutlined />}
           onClick={() => setCreateOpen(true)}
+          style={{ width: isMobile ? "100%" : undefined }}
         >
           新增映射
         </Button>
@@ -123,7 +126,7 @@ export default function ModelMappingPage() {
           },
           {
             title: "操作",
-            fixed: "right",
+            fixed: isMobile ? undefined : ("right" as const),
             width: 220,
             render: (_, row) => (
               <Space size={4}>
@@ -174,6 +177,7 @@ export default function ModelMappingPage() {
 
       <CreateModal
         open={createOpen}
+        isMobile={isMobile}
         onClose={() => setCreateOpen(false)}
         onDone={() => {
           setCreateOpen(false);
@@ -182,6 +186,7 @@ export default function ModelMappingPage() {
       />
       <EditDrawer
         model={editing}
+        isMobile={isMobile}
         onClose={() => setEditing(null)}
         onDone={() => {
           setEditing(null);
@@ -194,10 +199,12 @@ export default function ModelMappingPage() {
 
 function CreateModal({
   open,
+  isMobile,
   onClose,
   onDone,
 }: {
   open: boolean;
+  isMobile: boolean;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -226,6 +233,7 @@ function CreateModal({
       onOk={() => form.submit()}
       confirmLoading={mut.isPending}
       destroyOnHidden
+      width={isMobile ? "calc(100vw - 24px)" : 520}
       okText="创建"
       cancelText="取消"
     >
@@ -262,10 +270,12 @@ function CreateModal({
 
 function EditDrawer({
   model,
+  isMobile,
   onClose,
   onDone,
 }: {
   model: ModelMapping | null;
+  isMobile: boolean;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -289,7 +299,7 @@ function EditDrawer({
       title="编辑模型映射"
       open={!!model}
       onClose={onClose}
-      width={360}
+      width={isMobile ? "100%" : 360}
       destroyOnClose
       extra={
         <Button

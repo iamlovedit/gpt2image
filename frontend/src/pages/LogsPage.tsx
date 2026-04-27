@@ -18,6 +18,7 @@ import {
   RequestLog,
   listLogs,
 } from "@/api/logs";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const statusOptions = Object.entries(BusinessStatusLabel).map(([v, label]) => ({
   value: Number(v) as RequestBusinessStatus,
@@ -29,6 +30,7 @@ function formatToken(value: number | null | undefined) {
 }
 
 export default function LogsPage() {
+  const isMobile = useIsMobile();
   const [status, setStatus] = useState<RequestBusinessStatus | undefined>();
   const [clientKeyId, setClientKeyId] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -54,7 +56,7 @@ export default function LogsPage() {
 
   return (
     <Card
-      className="glow-box"
+      className="glow-box app-page-card"
       variant="borderless"
       title={
         <span className="tech-title" style={{ fontSize: 13 }}>
@@ -62,12 +64,16 @@ export default function LogsPage() {
         </span>
       }
       extra={
-        <Space wrap>
+        <Space
+          className="page-toolbar"
+          wrap
+          style={{ width: isMobile ? "100%" : undefined }}
+        >
           <Select
             allowClear
             placeholder="状态"
             options={statusOptions}
-            style={{ width: 160 }}
+            style={{ width: isMobile ? "100%" : 160 }}
             value={status}
             onChange={(v) => {
               setStatus(v);
@@ -77,7 +83,7 @@ export default function LogsPage() {
           <Input
             allowClear
             placeholder="Client Key ID"
-            style={{ width: 260 }}
+            style={{ width: isMobile ? "100%" : 260 }}
             value={clientKeyId}
             onChange={(e) => {
               setClientKeyId(e.target.value);
@@ -87,7 +93,7 @@ export default function LogsPage() {
           <Input
             allowClear
             placeholder="Account ID"
-            style={{ width: 260 }}
+            style={{ width: isMobile ? "100%" : 260 }}
             value={accountId}
             onChange={(e) => {
               setAccountId(e.target.value);
@@ -96,6 +102,7 @@ export default function LogsPage() {
           />
           <DatePicker.RangePicker
             showTime
+            style={{ width: isMobile ? "100%" : undefined }}
             value={range as any}
             onChange={(r) => {
               setRange(r as any);
@@ -114,6 +121,8 @@ export default function LogsPage() {
           current: page,
           pageSize,
           total: data?.total ?? 0,
+          showLessItems: isMobile,
+          showSizeChanger: !isMobile,
           onChange: (p, s) => {
             setPage(p);
             setPageSize(s);
@@ -178,6 +187,7 @@ export default function LogsPage() {
             render: (v) => v || "—",
           },
         ]}
+        scroll={{ x: 1260 }}
       />
 
       <Modal
@@ -185,7 +195,7 @@ export default function LogsPage() {
         open={!!detail}
         onCancel={() => setDetail(null)}
         footer={null}
-        width={720}
+        width={isMobile ? "calc(100vw - 24px)" : 720}
       >
         {detail && (
           <Descriptions column={1} size="small" bordered>

@@ -19,6 +19,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import imageGenerationRequestFile from "../../../image_generation_request.json";
 import imageParseRequestFile from "../../../image_parse_request.json";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const { Paragraph, Text, Title } = Typography;
 
@@ -260,6 +261,7 @@ function QuickStartCard({
 
 export default function DocsPage() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const origin =
     typeof window === "undefined"
       ? "https://your-image-relay-host"
@@ -316,7 +318,7 @@ export default function DocsPage() {
                   style={{
                     margin: 0,
                     color: "#E6ECF5",
-                    fontSize: 42,
+                    fontSize: isMobile ? 30 : 42,
                     lineHeight: 1.15,
                   }}
                 >
@@ -328,8 +330,8 @@ export default function DocsPage() {
                     marginTop: 16,
                     marginBottom: 0,
                     color: "#C5D2E8",
-                    fontSize: 16,
-                    lineHeight: 1.85,
+                    fontSize: isMobile ? 14 : 16,
+                    lineHeight: isMobile ? 1.75 : 1.85,
                   }}
                 >
                   面向第三方客户端的公开文档首页。对外统一使用{" "}
@@ -358,14 +360,14 @@ export default function DocsPage() {
               <div className="docs-hero-actions">
                 <Button
                   type="primary"
-                  size="large"
+                  size={isMobile ? "middle" : "large"}
                   icon={<LoginOutlined />}
                   onClick={() => navigate("/login")}
                 >
                   后台登录
                 </Button>
                 <Button
-                  size="large"
+                  size={isMobile ? "middle" : "large"}
                   onClick={() => {
                     document
                       .getElementById("quick-start")
@@ -447,7 +449,7 @@ export default function DocsPage() {
 
             <Tabs
               className="docs-tabs"
-              size="large"
+              size={isMobile ? "middle" : "large"}
               items={examples.map((example) => ({
                 key: example.key,
                 label: (

@@ -19,14 +19,14 @@ export default function ProfilePage() {
 
   return (
     <Card
-      className="glow-box"
+      className="glow-box app-page-card"
       bordered={false}
       title={
         <span className="tech-title" style={{ fontSize: 13 }}>
           PROFILE · CHANGE PASSWORD
         </span>
       }
-      style={{ maxWidth: 480 }}
+      style={{ width: "100%", maxWidth: 480 }}
     >
       <Form
         form={form}

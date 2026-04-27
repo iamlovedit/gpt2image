@@ -32,10 +32,12 @@ import {
   updateKey,
 } from "@/api/keys";
 import { extractError } from "@/api/client";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function KeysPage() {
   const qc = useQueryClient();
   const { message } = App.useApp();
+  const isMobile = useIsMobile();
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<ClientKey | null>(null);
   const [plaintext, setPlaintext] = useState<string | null>(null);
@@ -63,7 +65,7 @@ export default function KeysPage() {
 
   return (
     <Card
-      className="glow-box"
+      className="glow-box app-page-card"
       bordered={false}
       title={
         <span className="tech-title" style={{ fontSize: 13 }}>
@@ -75,6 +77,7 @@ export default function KeysPage() {
           type="primary"
           icon={<PlusOutlined />}
           onClick={() => setCreateOpen(true)}
+          style={{ width: isMobile ? "100%" : undefined }}
         >
           创建 Key
         </Button>
@@ -138,7 +141,7 @@ export default function KeysPage() {
           },
           {
             title: "操作",
-            fixed: "right",
+            fixed: isMobile ? undefined : ("right" as const),
             width: 220,
             render: (_, row) => (
               <Space size={4}>
@@ -195,6 +198,7 @@ export default function KeysPage() {
 
       <CreateModal
         open={createOpen}
+        isMobile={isMobile}
         onClose={() => setCreateOpen(false)}
         onCreated={(txt) => {
           setCreateOpen(false);
@@ -204,6 +208,7 @@ export default function KeysPage() {
       />
       <EditDrawer
         keyItem={editing}
+        isMobile={isMobile}
         onClose={() => setEditing(null)}
         onDone={() => {
           setEditing(null);
@@ -212,6 +217,7 @@ export default function KeysPage() {
       />
       <PlaintextModal
         plaintext={plaintext}
+        isMobile={isMobile}
         onClose={() => setPlaintext(null)}
       />
     </Card>
@@ -220,10 +226,12 @@ export default function KeysPage() {
 
 function CreateModal({
   open,
+  isMobile,
   onClose,
   onCreated,
 }: {
   open: boolean;
+  isMobile: boolean;
   onClose: () => void;
   onCreated: (plaintext: string) => void;
 }) {
@@ -253,6 +261,7 @@ function CreateModal({
       onOk={() => form.submit()}
       confirmLoading={mut.isPending}
       destroyOnHidden
+      width={isMobile ? "calc(100vw - 24px)" : 520}
       okText="创建"
       cancelText="取消"
     >
@@ -269,7 +278,11 @@ function CreateModal({
         >
           <Input placeholder="例如：demo-app" />
         </Form.Item>
-        <Space style={{ width: "100%" }} size={16}>
+        <Space
+          direction={isMobile ? "vertical" : "horizontal"}
+          style={{ width: "100%" }}
+          size={16}
+        >
           <Form.Item name="rpmLimit" label="RPM 限额" style={{ flex: 1 }}>
             <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
@@ -294,10 +307,12 @@ function CreateModal({
 
 function EditDrawer({
   keyItem,
+  isMobile,
   onClose,
   onDone,
 }: {
   keyItem: ClientKey | null;
+  isMobile: boolean;
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -325,7 +340,7 @@ function EditDrawer({
       title="编辑 Key"
       open={!!keyItem}
       onClose={onClose}
-      width={360}
+      width={isMobile ? "100%" : 360}
       destroyOnClose
       extra={
         <Button
@@ -373,9 +388,11 @@ function EditDrawer({
 
 function PlaintextModal({
   plaintext,
+  isMobile,
   onClose,
 }: {
   plaintext: string | null;
+  isMobile: boolean;
   onClose: () => void;
 }) {
   const { message } = App.useApp();
@@ -396,7 +413,7 @@ function PlaintextModal({
       cancelButtonProps={{ style: { display: "none" } }}
       maskClosable={false}
       closable={false}
-      width={560}
+      width={isMobile ? "calc(100vw - 24px)" : 560}
     >
       <Typography.Paragraph type="warning">
         这是该 Key 唯一一次可见明文，关闭后无法再次查看，请立刻保存。

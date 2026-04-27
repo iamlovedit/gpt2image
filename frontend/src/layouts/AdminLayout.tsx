@@ -1,4 +1,4 @@
-import { Layout, Menu, Dropdown, Avatar, Space } from "antd";
+import { Layout, Menu, Dropdown, Avatar, Space, Drawer, Button } from "antd";
 import {
   DashboardOutlined,
   CloudServerOutlined,
@@ -8,10 +8,13 @@ import {
   SettingOutlined,
   UserOutlined,
   LogoutOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import type { CSSProperties } from "react";
+import { useState } from "react";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const { Sider, Header, Content } = Layout;
 
@@ -49,6 +52,8 @@ export default function AdminLayout() {
   const loc = useLocation();
   const username = useAuthStore((s) => s.username);
   const clear = useAuthStore((s) => s.clear);
+  const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const onLogout = () => {
     clear();
@@ -58,29 +63,85 @@ export default function AdminLayout() {
   const active =
     menuItems.find((m) => loc.pathname.startsWith(m.key))?.key ?? "/dashboard";
 
+  const navigateMenu = (key: string) => {
+    navigate(key);
+    setMobileMenuOpen(false);
+  };
+
+  const navMenu = (
+    <Menu
+      theme="dark"
+      mode="inline"
+      selectedKeys={[active]}
+      items={menuItems}
+      onClick={(e) => navigateMenu(e.key)}
+      style={{ background: "transparent", borderRight: "none" }}
+    />
+  );
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Sider
-        width={220}
-        theme="dark"
-        style={{ borderRight: "1px solid rgba(0,212,255,0.1)" }}
-      >
-        <div style={{ padding: "20px 24px", ...brandStyle }}>IMAGE · RELAY</div>
-        <div className="tech-divider" style={{ margin: "4px 18px 12px" }} />
-        <Menu
+      {!isMobile && (
+        <Sider
+          width={220}
           theme="dark"
-          mode="inline"
-          selectedKeys={[active]}
-          items={menuItems}
-          onClick={(e) => navigate(e.key)}
-          style={{ background: "transparent", borderRight: "none" }}
-        />
-      </Sider>
-      <Layout>
-        <Header style={headerStyle}>
-          <span className="tech-title" style={{ fontSize: 12 }}>
-            OPENAI IMAGE2 · RELAY CONTROL
-          </span>
+          style={{ borderRight: "1px solid rgba(0,212,255,0.1)" }}
+        >
+          <div style={{ padding: "20px 24px", ...brandStyle }}>IMAGE · RELAY</div>
+          <div className="tech-divider" style={{ margin: "4px 18px 12px" }} />
+          {navMenu}
+        </Sider>
+      )}
+      <Drawer
+        className="mobile-nav-drawer"
+        title={<span style={brandStyle}>IMAGE · RELAY</span>}
+        placement="left"
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        width={280}
+        styles={{
+          header: {
+            background: "#0A0F1D",
+            borderBottom: "1px solid rgba(0, 212, 255, 0.16)",
+          },
+          body: { padding: 0, background: "#0A0F1D" },
+          content: { background: "#0A0F1D" },
+        }}
+      >
+        <div className="tech-divider" style={{ margin: "0 18px 12px" }} />
+        {navMenu}
+      </Drawer>
+      <Layout style={{ minWidth: 0 }}>
+        <Header
+          style={{
+            ...headerStyle,
+            padding: isMobile ? "0 12px" : headerStyle.padding,
+            gap: 12,
+          }}
+        >
+          <Space align="center" size={isMobile ? 8 : 12} style={{ minWidth: 0 }}>
+            {isMobile && (
+              <Button
+                type="text"
+                aria-label="打开导航菜单"
+                icon={<MenuOutlined />}
+                onClick={() => setMobileMenuOpen(true)}
+                style={{ color: "#00D4FF", flex: "0 0 auto" }}
+              />
+            )}
+            <span
+              className="tech-title"
+              style={{
+                fontSize: 12,
+                minWidth: 0,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {isMobile ? "IMAGE RELAY" : "OPENAI IMAGE2 · RELAY CONTROL"}
+            </span>
+          </Space>
           <Dropdown
             menu={{
               items: [
@@ -100,18 +161,25 @@ export default function AdminLayout() {
               ],
             }}
           >
-            <Space style={{ cursor: "pointer", color: "#E6ECF5" }}>
+            <Space
+              style={{
+                cursor: "pointer",
+                color: "#E6ECF5",
+                minWidth: 0,
+                flex: "0 0 auto",
+              }}
+            >
               <Avatar
                 size="small"
                 style={{ background: "#00D4FF", color: "#0A0F1D" }}
               >
                 {username?.[0]?.toUpperCase() ?? "A"}
               </Avatar>
-              <span>{username ?? "管理员"}</span>
+              {!isMobile && <span>{username ?? "管理员"}</span>}
             </Space>
           </Dropdown>
         </Header>
-        <Content style={{ padding: 24 }}>
+        <Content style={{ padding: isMobile ? 12 : 24, minWidth: 0 }}>
           <Outlet />
         </Content>
       </Layout>

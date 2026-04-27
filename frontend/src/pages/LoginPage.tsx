@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
 import { login } from "@/api/auth";
 import { extractError } from "@/api/client";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const colors = {
   cyan: "#00D4FF",
@@ -354,6 +355,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
   const { message } = App.useApp();
+  const isMobile = useIsMobile();
 
   async function onFinish(v: { username: string; password: string }) {
     try {
@@ -369,17 +371,51 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={styles.shell}>
-      <main style={styles.stage}>
-        <section style={styles.brandPane} aria-label="Image Relay 控制台概览">
+    <div
+      style={{
+        ...styles.shell,
+        alignItems: isMobile ? "flex-start" : styles.shell.alignItems,
+        padding: isMobile ? 12 : styles.shell.padding,
+      }}
+    >
+      <main
+        style={{
+          ...styles.stage,
+          flexDirection: isMobile ? "column-reverse" : undefined,
+          flexWrap: isMobile ? "nowrap" : styles.stage.flexWrap,
+          gap: isMobile ? 16 : styles.stage.gap,
+        }}
+      >
+        <section
+          style={{
+            ...styles.brandPane,
+            flex: isMobile ? "0 0 auto" : styles.brandPane.flex,
+            gap: isMobile ? 14 : styles.brandPane.gap,
+          }}
+          aria-label="Image Relay 控制台概览"
+        >
           <div
             className="tech-title"
             style={styles.eyebrow}
           >
             OPENAI IMAGE2 · RELAY CONTROL
           </div>
-          <h1 style={styles.title}>IMAGE · RELAY</h1>
-          <p style={styles.subtitle}>
+          <h1
+            style={{
+              ...styles.title,
+              fontSize: isMobile ? 34 : styles.title.fontSize,
+              letterSpacing: isMobile ? "0.03em" : styles.title.letterSpacing,
+            }}
+          >
+            IMAGE · RELAY
+          </h1>
+          <p
+            style={{
+              ...styles.subtitle,
+              fontSize: isMobile ? 14 : styles.subtitle.fontSize,
+              lineHeight: isMobile ? 1.7 : styles.subtitle.lineHeight,
+            }}
+          >
             面向管理员的图片生成中转控制台，集中管理上游账号、调用方
             API Key、请求日志与模型映射。
           </p>
@@ -404,14 +440,21 @@ export default function LoginPage() {
               color={colors.purple}
             />
           </div>
-          <TopologyPanel />
+          {!isMobile && <TopologyPanel />}
         </section>
 
-        <aside style={styles.loginColumn} aria-label="管理员登录">
+        <aside
+          style={{
+            ...styles.loginColumn,
+            flex: isMobile ? "0 0 auto" : styles.loginColumn.flex,
+            width: "100%",
+          }}
+          aria-label="管理员登录"
+        >
           <Card
-            className="glow-box"
+            className="glow-box login-card"
             style={styles.loginCard}
-            styles={{ body: { padding: 30 } }}
+            styles={{ body: { padding: isMobile ? 20 : 30 } }}
             variant="borderless"
           >
             <div style={styles.cardHeader}>

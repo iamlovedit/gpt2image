@@ -7,11 +7,13 @@ import {
   type UpstreamHeaderSettings,
 } from "@/api/settings";
 import { extractError } from "@/api/client";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function SettingsPage() {
   const [form] = Form.useForm<UpstreamHeaderSettings>();
   const { message } = App.useApp();
   const qc = useQueryClient();
+  const isMobile = useIsMobile();
 
   const { data, isLoading } = useQuery({
     queryKey: ["upstream-header-settings"],
@@ -40,7 +42,7 @@ export default function SettingsPage() {
 
   return (
     <Card
-      className="glow-box"
+      className="glow-box app-page-card"
       bordered={false}
       title={
         <span className="tech-title" style={{ fontSize: 13 }}>
@@ -52,6 +54,7 @@ export default function SettingsPage() {
           type="primary"
           onClick={() => form.submit()}
           loading={mut.isPending}
+          style={{ width: isMobile ? "100%" : undefined }}
         >
           保存
         </Button>

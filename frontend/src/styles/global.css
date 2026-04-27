@@ -12,6 +12,7 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
+  min-width: 0;
 }
 
 body {
@@ -28,6 +29,47 @@ body {
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
   background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+.ant-layout,
+.ant-layout-content {
+  min-width: 0;
+}
+
+.app-page-card {
+  width: 100%;
+  max-width: 100%;
+}
+
+.app-page-card .ant-card-head-title {
+  min-width: 0;
+}
+
+.page-toolbar {
+  max-width: 100%;
+}
+
+.mobile-nav-drawer .ant-drawer-close {
+  color: #8A9ABF;
+}
+
+.login-card input:-webkit-autofill,
+.login-card input:-webkit-autofill:hover,
+.login-card input:-webkit-autofill:focus,
+.login-card input:-webkit-autofill:active {
+  -webkit-text-fill-color: #E6ECF5 !important;
+  caret-color: #E6ECF5;
+  box-shadow: 0 0 0 1000px #10172A inset !important;
+  -webkit-box-shadow: 0 0 0 1000px #10172A inset !important;
+  transition: background-color 9999s ease-out, color 9999s ease-out;
+}
+
+.login-card input:autofill,
+.login-card input:-moz-autofill {
+  color: #E6ECF5 !important;
+  caret-color: #E6ECF5;
+  box-shadow: 0 0 0 1000px #10172A inset !important;
 }
 
 ::-webkit-scrollbar {
@@ -258,5 +300,151 @@ body {
     padding: 14px;
     font-size: 11px;
     max-height: 360px;
+  }
+}
+
+@media (max-width: 767px) {
+  body {
+    background-attachment: scroll;
+  }
+
+  .tech-title {
+    letter-spacing: 0.08em;
+  }
+
+  .num-kpi {
+    font-size: 26px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .glow-box,
+  .glow-box::before {
+    border-radius: 8px;
+  }
+
+  .app-page-card > .ant-card-head {
+    min-height: 0;
+    padding: 0 14px;
+  }
+
+  .app-page-card > .ant-card-head .ant-card-head-wrapper {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .app-page-card > .ant-card-head .ant-card-head-title {
+    flex: 1 1 100%;
+    padding: 12px 0 8px;
+    white-space: normal;
+  }
+
+  .app-page-card > .ant-card-head .ant-card-extra {
+    flex: 1 1 100%;
+    width: 100%;
+    margin-inline-start: 0;
+    padding: 0 0 12px;
+  }
+
+  .app-page-card > .ant-card-body {
+    padding: 14px;
+  }
+
+  .page-toolbar {
+    display: flex;
+    width: 100%;
+  }
+
+  .page-toolbar .ant-space-item {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .page-toolbar .ant-btn,
+  .page-toolbar .ant-picker,
+  .page-toolbar .ant-select,
+  .page-toolbar .ant-input-search,
+  .page-toolbar .ant-input-affix-wrapper {
+    width: 100% !important;
+  }
+
+  .ant-modal {
+    max-width: calc(100vw - 24px);
+    margin: 12px auto;
+  }
+
+  .ant-modal .ant-modal-content {
+    padding: 16px;
+  }
+
+  .ant-modal .ant-space-vertical,
+  .ant-modal .ant-space-vertical .ant-space-item {
+    width: 100%;
+  }
+
+  .ant-drawer .ant-drawer-body {
+    overflow-x: hidden;
+  }
+
+  .ant-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .ant-table {
+    font-size: 12px;
+  }
+
+  .ant-pagination {
+    row-gap: 8px;
+  }
+
+  .ant-table-pagination.ant-pagination {
+    justify-content: center;
+  }
+
+  .ant-descriptions-view {
+    overflow-x: auto;
+  }
+
+  .docs-shell {
+    padding: 12px;
+  }
+
+  .docs-hero {
+    border-radius: 10px;
+  }
+
+  .docs-hero-content {
+    padding: 20px 14px;
+  }
+
+  .docs-hero-actions {
+    flex-direction: column;
+  }
+
+  .docs-hero-actions .ant-btn {
+    width: 100%;
+  }
+
+  .docs-section {
+    margin-bottom: 18px;
+  }
+
+  .docs-section-title {
+    font-size: 18px;
+  }
+
+  .docs-tabs .ant-tabs-nav {
+    overflow-x: auto;
+  }
+
+  .docs-tabs .ant-tabs-tab {
+    padding: 10px 12px;
+  }
+
+  .docs-code-block {
+    padding: 12px;
+    max-height: 320px;
   }
 }
